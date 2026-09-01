@@ -43,7 +43,7 @@ pub fn icon() -> egui::IconData {
 
                 // стрелка продолжения в правом нижнем углу бокса
                 let (ax, ay) = (x - (n - 21.0), y - (n - 26.0));
-                if ay >= 0.0 && ay <= 5.0 && ax.abs() <= 5.0 - ay {
+                if (0.0..=5.0).contains(&ay) && ax.abs() <= 5.0 - ay {
                     c = PAPER;
                 }
             }
