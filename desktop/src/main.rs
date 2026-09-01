@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod appicon;
 mod audio;
 mod doc;
 mod editor;
@@ -16,6 +17,7 @@ fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("Dialoging")
+            .with_icon(appicon::icon())
             .with_inner_size([1240.0, 900.0])
             .with_min_inner_size([720.0, 560.0]),
         ..Default::default()
