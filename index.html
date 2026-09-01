@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEDEA">
+<title>Dialoging — конвертер диалогов</title>
+<style>
+:root{
+  --bg:#EFEDEA; --card:#F7F6F4; --white:#fff;
+  --ink:#0A0A0A; --ink-2:#6B6864; --ink-3:#9C9894; --ink-4:#C3BFBA;
+  --line:#DEDAD5; --line-2:#E8E4DF;
+  --accent:#16A34A; --accent-ink:#0E7A37; --accent-soft:rgba(22,163,74,.12);
+  --sans:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif;
+  --mono:"SF Mono",SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  --sh-1:0 1px 1.5px rgba(38,32,26,.05), 0 4px 10px -5px rgba(38,32,26,.14);
+  --sh-2:0 1px 2px rgba(38,32,26,.05), 0 12px 26px -12px rgba(38,32,26,.22);
+  --sh-3:0 2px 4px rgba(38,32,26,.06), 0 24px 48px -18px rgba(38,32,26,.30);
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --bar-h:0px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+     font-size:15px;line-height:1.5;padding:0 0 calc(var(--bar-h) + 24px)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+::selection{background:var(--accent-soft)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+         text-transform:uppercase;color:var(--ink-2)}
+.eyebrow.dim{color:var(--ink-3)}
+
+/* ---------------- header ---------------- */
+header{padding:20px 0 0}
+.hrow{display:flex;justify-content:space-between;align-items:center;
+      padding-bottom:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.hactions{display:flex;align-items:center;gap:6px}
+.ghost{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;
+       border-radius:9px;font-size:12.5px;color:var(--ink-2);
+       border:1px solid transparent;transition:.18s var(--ease)}
+.ghost:hover{background:var(--white);border-color:var(--line-2);
+             color:var(--ink);box-shadow:var(--sh-1)}
+.ghost.on{background:var(--ink);color:#fff;border-color:transparent}
+.ghost svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+           stroke-linecap:round;stroke-linejoin:round}
+.ghost svg .fillmark{fill:currentColor;stroke:none}
+
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;
+          margin:26px 0 22px}
+h1{font-size:38px;line-height:1.02;letter-spacing:-.035em;font-weight:500}
+h1 em{font-style:normal;color:var(--ink-3)}
+.stat{text-align:right;flex:none}
+.stat .n{font-size:40px;line-height:.9;letter-spacing:-.04em;font-weight:500;
+         font-variant-numeric:tabular-nums}
+
+/* ---------------- layout ---------------- */
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media(min-width:960px){
+  .grid{grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);gap:20px}
+  .col-r{position:sticky;top:18px}
+}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.panel{min-width:0;background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:18px;
+       box-shadow:var(--sh-2);overflow:hidden}
+.phead{display:flex;justify-content:space-between;align-items:center;
+       padding:15px 18px 13px;border-bottom:1px solid var(--line-2)}
+.phead .l{display:flex;align-items:center;gap:9px}
+.pbody{padding:18px}
+
+/* ---------------- editor ---------------- */
+#editor{min-height:132px;font-size:19px;line-height:2.05;letter-spacing:-.012em;
+        outline:none;word-break:break-word}
+#editor:empty:before{content:attr(data-ph);color:var(--ink-4)}
+
+.chip{display:inline-flex;align-items:center;gap:5px;vertical-align:-3px;
+      padding:3px 8px;border-radius:8px;margin:0 2px;user-select:none;cursor:pointer;
+      background:var(--white);border:1px solid rgba(0,0,0,.07);
+      box-shadow:0 1px 1px rgba(38,32,26,.05),0 3px 8px -4px rgba(38,32,26,.28);
+      font-family:var(--mono);font-size:11.5px;line-height:1;letter-spacing:0;
+      transition:transform .16s var(--ease), box-shadow .16s var(--ease);
+      animation:pop .22s var(--ease)}
+.chip:hover{transform:translateY(-1px);
+            box-shadow:0 1px 1px rgba(38,32,26,.05),0 6px 14px -5px rgba(38,32,26,.34)}
+.chip svg{width:14px;height:14px;display:block;fill:none;stroke:var(--ink);
+          stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.chip svg .fillmark{fill:var(--ink);stroke:none}
+.chip .val{color:var(--ink-2);font-size:11px}
+.chip .dot{width:11px;height:11px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}
+.chip[data-role="close"]{background:transparent;box-shadow:none;
+                         border-style:dashed;border-color:var(--ink-4);opacity:.75}
+.chip[data-role="close"] svg{stroke:var(--ink-2)}
+.chip.sel{outline:2px solid var(--accent);outline-offset:1px}
+@keyframes pop{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------------- token bar ---------------- */
+/* база — мобильная: одна прокручиваемая лента «доп. символов» над клавиатурой */
+.tokbar{position:fixed;left:0;right:0;bottom:0;z-index:40;
+        background:rgba(239,237,234,.86);
+        backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+        border-top:1px solid var(--line)}
+.tokbar .inner{display:flex;align-items:center;gap:7px;overflow-x:auto;
+               scrollbar-width:none;
+               padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.tokbar .inner::-webkit-scrollbar{display:none}
+.tgroup{display:contents}
+.tgroup::before{content:"";flex:none;width:1px;height:20px;
+                background:var(--line);margin:0 3px}
+.tgroup:first-child::before{display:none}
+.glabel{display:none}
+
+@media(min-width:960px){
+  .tokbar{position:relative;left:auto;right:auto;bottom:auto;background:var(--card);
+          border:1px solid rgba(0,0,0,.05);border-radius:18px;box-shadow:var(--sh-2);
+          backdrop-filter:none;-webkit-backdrop-filter:none}
+  .tokbar .inner{display:block;overflow:visible;padding:15px 18px 16px}
+  .tgroup{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+  .tgroup::before{display:none}
+  .tgroup + .tgroup{margin-top:7px}
+  .glabel{display:block;flex:none;width:74px;font-family:var(--mono);font-size:9.5px;
+          letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+}
+
+.tbtn{flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;
+      border-radius:11px;background:var(--white);border:1px solid rgba(0,0,0,.06);
+      box-shadow:var(--sh-1);font-size:12.5px;white-space:nowrap;
+      transition:transform .16s var(--ease),box-shadow .16s var(--ease),
+                 background .16s var(--ease)}
+.tbtn:hover{transform:translateY(-1.5px);box-shadow:var(--sh-2)}
+.tbtn:active{transform:translateY(0) scale(.97)}
+.tbtn.armed{background:var(--accent);border-color:transparent;color:#fff;
+            box-shadow:0 4px 14px -4px rgba(22,163,74,.6)}
+.tbtn.armed svg{stroke:#fff}.tbtn.armed svg .fillmark{fill:#fff}
+.tbtn svg{width:17px;height:17px;flex:none;fill:none;stroke:var(--ink);stroke-width:1.6;
+          stroke-linecap:round;stroke-linejoin:round}
+.tbtn svg .fillmark{fill:var(--ink);stroke:none}
+@media(max-width:959px){.tbtn{height:36px;padding:0 10px;font-size:12px}}
+
+/* ---------------- output ---------------- */
+#out{font-family:var(--mono);font-size:14px;line-height:1.85;word-break:break-word;
+     white-space:pre-wrap;min-height:60px}
+#out .cmd{color:var(--accent-ink);background:var(--accent-soft);
+          border-radius:4px;padding:1px 3px}
+#out.empty{color:var(--ink-4)}
+
+/* ---------------- preview / textbox ---------------- */
+.stage{padding:18px}
+.tbox{position:relative;background:#000;border:5px solid #fff;border-radius:3px;
+      padding:20px 18px;min-height:168px;display:flex;gap:16px;
+      box-shadow:0 18px 40px -20px rgba(0,0,0,.6)}
+.portrait{flex:none;width:60px;height:60px;border:3px solid #fff;border-radius:2px;
+          display:none;align-items:center;justify-content:center}
+.portrait.on{display:flex}
+.portrait svg{width:38px;height:38px;fill:none;stroke:#fff;stroke-width:1.7;
+              stroke-linecap:round;stroke-linejoin:round}
+.portrait svg .fillmark{fill:#fff;stroke:none}
+#screen{flex:1;min-width:0;color:#fff;font-family:var(--mono);font-size:16.5px;
+        line-height:1.75;letter-spacing:.04em;white-space:pre-wrap;word-break:break-word}
+.ch{display:inline-block;white-space:pre}
+.caret{position:absolute;right:13px;bottom:10px;width:0;height:0;
+       border-left:7px solid transparent;border-right:7px solid transparent;
+       border-top:9px solid #fff;opacity:0}
+.caret.on{opacity:1;animation:blink 1s steps(1) infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:.15}}
+
+/* motion effects — одна механика, разные стратегии задержки */
+.fx{--a:calc(var(--amp,2) * 1px);animation-duration:.42s;
+    animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.fx-shake,.fx-jitter{animation-name:kf-shake}
+.fx-wave{animation-name:kf-wave;animation-duration:1.1s}
+.fx-wobble{animation-name:kf-wobble;animation-duration:.8s}
+.fx-glitch{animation-name:kf-glitch;animation-duration:2.2s;
+           animation-timing-function:steps(1,end)}
+@keyframes kf-shake{0%,100%{transform:translate(0,0)}
+  25%{transform:translate(var(--a),calc(var(--a)*-.5))}
+  50%{transform:translate(calc(var(--a)*-.6),var(--a))}
+  75%{transform:translate(calc(var(--a)*.4),calc(var(--a)*.6))}}
+@keyframes kf-wave{0%,100%{transform:translateY(0)}
+  50%{transform:translateY(calc(var(--a) * -1.6))}}
+@keyframes kf-wobble{0%,100%{transform:rotate(calc(var(--a) * -3deg))}
+  50%{transform:rotate(calc(var(--a) * 3deg))}}
+@keyframes kf-glitch{0%,88%,100%{transform:translate(0,0)}
+  90%{transform:translate(calc(var(--a)*1.8),-1px)}
+  94%{transform:translate(calc(var(--a)*-1.8),1px)}}
+
+.stagebar{display:flex;align-items:center;gap:8px;padding:0 18px 18px}
+.pbtn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;
+      border-radius:11px;background:var(--ink);color:#fff;font-size:13px;
+      box-shadow:var(--sh-1);transition:transform .16s var(--ease),opacity .16s}
+.pbtn:hover{transform:translateY(-1.5px)}
+.pbtn:active{transform:scale(.97)}
+.pbtn.sec{background:var(--white);color:var(--ink);border:1px solid var(--line-2)}
+.pbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+          stroke-linecap:round;stroke-linejoin:round}
+.pbtn svg .fillmark{fill:currentColor;stroke:none}
+
+/* ---------------- popover ---------------- */
+#pop{position:fixed;z-index:90;background:var(--white);border-radius:14px;
+     border:1px solid rgba(0,0,0,.06);box-shadow:var(--sh-3);padding:12px;
+     display:none;animation:rise .18s var(--ease)}
+#pop.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(6px) scale(.97)}
+                to{opacity:1;transform:none}}
+#pop .ptitle{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+             text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+.opts{display:flex;flex-wrap:wrap;gap:6px;max-width:236px}
+.opt{min-width:34px;height:34px;padding:0 10px;border-radius:9px;display:inline-flex;
+     align-items:center;justify-content:center;gap:6px;font-size:13px;
+     border:1px solid var(--line-2);background:var(--card);
+     transition:.14s var(--ease)}
+.opt:hover{background:var(--white);box-shadow:var(--sh-1);transform:translateY(-1px)}
+.opt.on{background:var(--ink);color:#fff;border-color:transparent}
+.opt .dot{width:15px;height:15px;border-radius:50%;border:1px solid rgba(0,0,0,.14)}
+.opt svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;
+         stroke-linecap:round;stroke-linejoin:round}
+.opt svg .fillmark{fill:currentColor;stroke:none}
+.prow{display:flex;justify-content:flex-end;gap:6px;margin-top:10px;
+      padding-top:10px;border-top:1px solid var(--line-2)}
+.pdel{font-size:12px;color:#C0392B;padding:0 9px;height:30px;border-radius:8px;
+      display:inline-flex;align-items:center;transition:.14s}
+.pdel:hover{background:rgba(192,57,43,.09)}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--bar-h) + 22px);transform:translateX(-50%);
+       background:var(--ink);color:#fff;font-size:13px;padding:9px 15px;border-radius:11px;
+       box-shadow:var(--sh-3);opacity:0;pointer-events:none;transition:.22s var(--ease);z-index:95}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+@media(max-width:600px){
+  h1{font-size:28px}
+  .masthead{margin:20px 0 16px}
+  .stat .n{font-size:32px}
+  #editor{font-size:17px;line-height:1.95}
+  .wrap{padding:0 16px}
+}
+footer{margin-top:26px;padding:13px 0 6px;border-top:1px solid var(--line);
+       display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="hrow">
+      <div class="brand"><b>Dialoging</b><span class="eyebrow dim">Конвертер</span></div>
+      <div class="hactions">
+        <button class="ghost on" id="sndBtn" title="Звук печати"></button>
+        <button class="ghost" id="clrBtn">Очистить</button>
+      </div>
+    </div>
+
+    <div class="masthead">
+      <h1>Пиши как текст,<br><em>получай разметку</em></h1>
+      <div class="stat">
+        <div class="n" id="cnt">0</div>
+        <div class="eyebrow dim" style="margin-top:5px">токенов</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <!-- ВВОД -->
+      <section class="panel">
+        <div class="phead">
+          <div class="l"><span class="eyebrow">Ввод</span>
+            <span class="eyebrow dim" id="hint">жми иконки снизу</span></div>
+          <span class="eyebrow dim">01</span>
+        </div>
+        <div class="pbody">
+          <div id="editor" contenteditable="true" spellcheck="false"
+               data-ph="Начни печатать…"></div>
+        </div>
+      </section>
+
+      <!-- ПАНЕЛЬ ТОКЕНОВ -->
+      <div class="tokbar" id="tokbar"><div class="inner" id="tokInner"></div></div>
+    </div>
+
+    <div class="col col-r">
+      <!-- ВЫВОД -->
+      <section class="panel">
+        <div class="phead">
+          <div class="l"><span class="eyebrow">Вывод</span></div>
+          <button class="ghost" id="copyBtn">Копировать</button>
+        </div>
+        <div class="pbody"><div id="out" class="empty">—</div></div>
+      </section>
+
+      <!-- ПРЕВЬЮ -->
+      <section class="panel">
+        <div class="phead">
+          <div class="l"><span class="eyebrow">Превью</span>
+            <span class="eyebrow dim" id="pstate">готово</span></div>
+          <span class="eyebrow dim">03</span>
+        </div>
+        <div class="stage">
+          <div class="tbox" id="tbox">
+            <div class="portrait" id="portrait"></div>
+            <div id="screen"></div>
+            <div class="caret" id="caret"></div>
+          </div>
+        </div>
+        <div class="stagebar">
+          <button class="pbtn" id="playBtn"></button>
+          <button class="pbtn sec" id="stopBtn">Сброс</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <span class="eyebrow dim">17 токенов · 6 групп</span>
+    <span class="eyebrow dim">Undertale-style разметка</span>
+  </footer>
+</div>
+
+<div id="pop"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. ИКОНКИ — контурный набор (вариант A), сетка 24×24
+   ============================================================ */
+const ICON = {
+pause:`<path d="M9.2 4.9v14.2M14.8 4.9v14.2"/>`,
+clock:`<circle cx="12" cy="12" r="8.2"/><path d="M12 7.1V12.3l3.3 2"/>`,
+speed:`<path d="M4.6 6.6L11 12l-6.4 5.4"/><path d="M12.8 6.6L19.2 12l-6.4 5.4"/>`,
+bolt:`<path d="M13.3 3.2L6.4 13.6h4.6L10.3 20.8l7.3-10.9h-4.8z"/>`,
+newline:`<path d="M20 5.2v5.1a3.4 3.4 0 01-3.4 3.4H4.9"/><path d="M8.7 9.6L4.4 13.7l4.3 4.1"/>`,
+advance:`<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.6"/>
+         <path class="fillmark" d="M8.8 10.4h6.4L12 15.4z"/>`,
+close:`<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.6"/>
+       <path d="M9.4 9.6l5.2 4.8M14.6 9.6l-5.2 4.8"/>`,
+color:`<circle cx="12" cy="12" r="8.2"/><path class="fillmark" d="M12 3.8a8.2 8.2 0 010 16.4z"/>`,
+reset:`<path d="M4.4 11.4a7.8 7.8 0 102.5-5.3"/><path d="M3.4 4.6l.3 5.1 5.1-.4"/>`,
+voice:`<circle class="fillmark" cx="7.4" cy="12" r="2.3"/>
+       <path d="M12.4 8.4a5.4 5.4 0 010 7.2"/><path d="M15.9 5.4a10 10 0 010 13.2"/>`,
+face:`<circle cx="12" cy="12" r="8.2"/><circle class="fillmark" cx="9.4" cy="10.3" r="1.05"/>
+      <circle class="fillmark" cx="14.6" cy="10.3" r="1.05"/><path d="M9 14.3q3 2.7 6 0"/>`,
+shake:`<rect x="7.4" y="5.8" width="9.2" height="12.4" rx="2.2"/>
+       <path d="M4.3 9.4v5.2M1.9 10.9v2.2M19.7 9.4v5.2M22.1 10.9v2.2"/>`,
+jitter:`<rect x="2.8" y="12.4" width="5.6" height="5.6" rx="1.4"/>
+        <rect x="9.2" y="6.4" width="5.6" height="5.6" rx="1.4"/>
+        <rect x="15.6" y="11.2" width="5.6" height="5.6" rx="1.4"/>
+        <path d="M4.6 10.4l1-1.2M11.4 14.4l1 1.2M17.6 9.2l1-1.2"/>`,
+wave:`<path d="M2.4 12.6q3.2-5.6 6.4 0t6.4 0 6.4 0"/>`,
+wobble:`<g transform="rotate(-21 5.3 12)"><rect x="3.6" y="8" width="3.4" height="8" rx="1.1"/></g>
+        <g transform="rotate(21 12 12)"><rect x="10.3" y="8" width="3.4" height="8" rx="1.1"/></g>
+        <g transform="rotate(-21 18.7 12)"><rect x="17" y="8" width="3.4" height="8" rx="1.1"/></g>`,
+glitch:`<rect x="5.4" y="5.4" width="14" height="3.6" rx="1"/>
+        <rect x="8.2" y="10.2" width="13" height="3.6" rx="1"/>
+        <rect x="3" y="15" width="13" height="3.6" rx="1"/>`,
+sound:`<path d="M3.6 9.6h3.5L11.6 5.9v12.2L7.1 14.4H3.6z"/>
+       <path d="M15.1 9.4a3.9 3.9 0 010 5.2"/><path d="M18.2 6.6a8.2 8.2 0 010 10.8"/>`,
+/* служебные */
+play:`<path class="fillmark" d="M7 4.6l12 7.4-12 7.4z"/>`,
+stop:`<rect x="6" y="6" width="12" height="12" rx="2"/>`,
+volOn:`<path d="M4 9.4h3.4L11.8 5.8v12.4L7.4 14.6H4z"/><path d="M15.2 9.6a3.7 3.7 0 010 4.8"/>`,
+volOff:`<path d="M4 9.4h3.4L11.8 5.8v12.4L7.4 14.6H4z"/><path d="M15.4 10l4.2 4M19.6 10l-4.2 4"/>`,
+};
+const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
+
+/* ============================================================
+   2. СЛОВАРЬ ТОКЕНОВ
+   ============================================================ */
+const COLORS = {
+  R:{n:"Красный", c:"#E4483C"}, G:{n:"Зелёный", c:"#22B04D"},
+  B:{n:"Синий",   c:"#2E7BF6"}, Y:{n:"Жёлтый",  c:"#F2C230"},
+  P:{n:"Фиолет.", c:"#9B6BF0"}, O:{n:"Оранж.",  c:"#F2802B"},
+  W:{n:"Белый",   c:"#FFFFFF"},
+};
+const VOICES = {
+  S:{n:"Обычный", w:"square",   f:420, d:.030},
+  L:{n:"Низкий",  w:"sawtooth", f:180, d:.045},
+  H:{n:"Высокий", w:"square",   f:760, d:.022},
+  R:{n:"Робот",   w:"square",   f:300, d:.055},
+  W:{n:"Шёпот",   w:"triangle", f:240, d:.018},
+};
+const AMP = [1,2,3];
+
+const T = {
+  pause:  {g:"Тайминг", n:"Пауза",        icon:"pause",  def:2,
+           opts:[1,2,3,4,5,6,7,8,9], code:v=>"^"+v},
+  clock:  {g:"Тайминг", n:"Пауза мс",     icon:"clock",  def:250,
+           opts:[100,250,500,1000,2000], code:v=>"{p:"+v+"}"},
+  speed:  {g:"Тайминг", n:"Скорость",     icon:"speed",  def:2,
+           opts:[1,2,3,4,5], code:v=>"{s:"+v+"}"},
+  bolt:   {g:"Тайминг", n:"Мгновенно",    icon:"bolt",   code:()=>"{instant}"},
+
+  newline:{g:"Поток",   n:"Строка",       icon:"newline",code:()=>"&"},
+  advance:{g:"Поток",   n:"Ждать",        icon:"advance",code:()=>"/"},
+  close:  {g:"Поток",   n:"Закрыть",      icon:"close",  code:()=>"%"},
+
+  color:  {g:"Стиль",   n:"Цвет",         icon:"color",  def:"R", pick:"color",
+           opts:Object.keys(COLORS), code:v=>"\\"+v},
+  reset:  {g:"Стиль",   n:"Сброс",        icon:"reset",  code:()=>"\\X"},
+
+  voice:  {g:"Персонаж",n:"Голос",        icon:"voice",  def:"S", pick:"voice",
+           opts:Object.keys(VOICES), code:v=>"\\T"+v},
+  face:   {g:"Персонаж",n:"Лицо",         icon:"face",   def:1, pick:"face",
+           opts:[1,2,3,4,5,6], code:v=>"\\E"+v},
+
+  shake:  {g:"Движение",n:"Тряска",       icon:"shake",  def:2, wrap:1, opts:AMP,
+           code:v=>"{shake:"+v+"}", end:()=>"{/shake}"},
+  jitter: {g:"Движение",n:"Дрожь букв",   icon:"jitter", def:2, wrap:1, opts:AMP,
+           code:v=>"{jitter:"+v+"}", end:()=>"{/jitter}"},
+  wave:   {g:"Движение",n:"Волна",        icon:"wave",   def:2, wrap:1, opts:AMP,
+           code:v=>"{wave:"+v+"}", end:()=>"{/wave}"},
+  wobble: {g:"Движение",n:"Качание",      icon:"wobble", def:2, wrap:1, opts:AMP,
+           code:v=>"{wobble:"+v+"}", end:()=>"{/wobble}"},
+  glitch: {g:"Движение",n:"Глитч",        icon:"glitch", def:2, wrap:1, opts:AMP,
+           code:v=>"{glitch:"+v+"}", end:()=>"{/glitch}"},
+
+  sound:  {g:"Звук",    n:"Звук",         icon:"sound",  def:"hit", pick:"snd",
+           opts:["hit","ping","thud","coin"], code:v=>"{snd:"+v+"}"},
+};
+const GROUPS = ["Тайминг","Поток","Стиль","Персонаж","Движение","Звук"];
+
+/* подпись значения внутри чипа */
+function chipVal(k,v){
+  if(k==="color") return "";                       // показываем кружком
+  if(k==="voice") return VOICES[v].n;
+  if(k==="face")  return v;
+  if(k==="clock") return v;
+  if(k==="sound") return v;
+  if(T[k].opts)   return v;
+  return "";
+}
+
+/* ============================================================
+   3. РЕДАКТОР — чипы внутри contenteditable
+   ============================================================ */
+const ed = document.getElementById("editor");
+const ZW = "​";
+
+function makeChip(k,v,role){
+  const s = document.createElement("span");
+  s.className = "chip"; s.contentEditable = "false";
+  s.dataset.k = k; s.dataset.v = v ?? ""; s.dataset.role = role || "open";
+  renderChip(s);
+  return s;
+}
+function renderChip(s){
+  const k = s.dataset.k, v = s.dataset.v, close = s.dataset.role === "close";
+  let inner = svg(T[k].icon);
+  if(!close){
+    if(k === "color")
+      inner += `<i class="dot" style="background:${COLORS[v].c}"></i>`;
+    const lbl = chipVal(k,v);
+    if(lbl !== "") inner += `<i class="val">${lbl}</i>`;
+  }
+  s.innerHTML = inner;
+  s.title = T[k].n + (close ? " — конец" : "");
+}
+
+/* --- работа с выделением --- */
+let savedRange = null;
+function saveSel(){
+  const s = window.getSelection();
+  if(s.rangeCount && ed.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange();
+}
+function restoreSel(){
+  const s = window.getSelection();
+  if(savedRange){ s.removeAllRanges(); s.addRange(savedRange); }
+  else{ const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false);
+        s.removeAllRanges(); s.addRange(r); }
+}
+function caretAfter(node){
+  const r = document.createRange();
+  r.setStartAfter(node); r.collapse(true);
+  const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  savedRange = r.cloneRange();
+}
+ed.addEventListener("keyup", saveSel);
+ed.addEventListener("mouseup", saveSel);
+ed.addEventListener("focus", saveSel);
+
+/* --- вставка --- */
+function insertToken(k,v){
+  ed.focus(); restoreSel();
+  const spec = T[k];
+  const sel = window.getSelection();
+  const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+  if(!range) return;
+
+  if(spec.wrap){
+    const open  = makeChip(k,v,"open");
+    const closeC= makeChip(k,v,"close");
+    if(!range.collapsed){
+      const frag = range.extractContents();
+      range.insertNode(closeC);
+      range.insertNode(frag);
+      range.insertNode(open);
+      caretAfter(closeC);
+    }else{
+      range.insertNode(closeC);
+      range.insertNode(open);
+      const r = document.createRange();
+      r.setStartAfter(open); r.collapse(true);
+      sel.removeAllRanges(); sel.addRange(r); savedRange = r.cloneRange();
+    }
+  }else{
+    range.deleteContents();
+    const c = makeChip(k,v,"open");
+    range.insertNode(c);
+    const pad = document.createTextNode(ZW);
+    c.after(pad);
+    caretAfter(pad);
+  }
+  sync();
+}
+
+/* Enter — это перенос строки внутри бокса, а не новый абзац */
+ed.addEventListener("keydown", e=>{
+  if(e.key === "Enter"){ e.preventDefault(); saveSel(); insertToken("newline"); }
+});
+ed.addEventListener("input", sync);
+ed.addEventListener("paste", e=>{
+  e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData("text/plain");
+  document.execCommand("insertText", false, t.replace(/\s+/g," "));
+});
+
+/* клик по чипу — редактор параметра */
+ed.addEventListener("click", e=>{
+  const chip = e.target.closest(".chip");
+  if(chip) openPop(chip);
+});
+
+/* ============================================================
+   4. МОДЕЛЬ И СЕРИАЛИЗАЦИЯ
+   ============================================================ */
+function readOps(){
+  const ops = [];
+  ed.childNodes.forEach(function walk(n){
+    if(n.nodeType === 3){
+      const t = n.nodeValue.replace(new RegExp(ZW,"g"),"");
+      for(const ch of t) ops.push({t:"c", ch});
+    }else if(n.nodeType === 1){
+      if(n.classList && n.classList.contains("chip")){
+        ops.push({t:"k", k:n.dataset.k, v:n.dataset.v, close:n.dataset.role === "close"});
+      }else if(n.tagName === "BR"){
+        ops.push({t:"k", k:"newline", v:""});
+      }else{
+        n.childNodes.forEach(walk);
+      }
+    }
+  });
+  return ops;
+}
+function serialize(ops){
+  let s = "";
+  for(const o of ops){
+    if(o.t === "c") s += o.ch;
+    else s += o.close ? T[o.k].end() : T[o.k].code(o.v);
+  }
+  return s;
+}
+function highlight(ops){
+  let h = "";
+  const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  for(const o of ops){
+    if(o.t === "c") h += esc(o.ch);
+    else h += `<span class="cmd">${esc(o.close ? T[o.k].end() : T[o.k].code(o.v))}</span>`;
+  }
+  return h;
+}
+
+const outEl = document.getElementById("out"), cntEl = document.getElementById("cnt");
+function balancePairs(){
+  const wrapKeys = Object.keys(T).filter(k => T[k].wrap);
+  for(const k of wrapKeys){
+    const stack = [];
+    for(const c of ed.querySelectorAll(`.chip[data-k="${k}"]`)){
+      if(c.dataset.role === "close"){
+        if(stack.length) stack.pop(); else c.remove();   // конец без начала
+      }else stack.push(c);
+    }
+    stack.forEach(c => c.remove());                       // начало без конца
+  }
+}
+function sync(){
+  balancePairs();
+  const ops = readOps();
+  const n = ops.filter(o => o.t === "k" && !o.close).length;
+  cntEl.textContent = n;
+  const has = ops.length > 0;
+  outEl.classList.toggle("empty", !has);
+  outEl.innerHTML = has ? highlight(ops) : "—";
+  saveDraft();
+}
+
+/* ============================================================
+   5. ПАНЕЛЬ ТОКЕНОВ
+   ============================================================ */
+const tokInner = document.getElementById("tokInner");
+tokInner.innerHTML = GROUPS.map(g=>{
+  const keys = Object.keys(T).filter(k => T[k].g === g);
+  return `<div class="tgroup"><span class="glabel">${g}</span>` +
+    keys.map(k=>`<button class="tbtn" data-k="${k}">${svg(T[k].icon)}
+      <span>${T[k].n}</span></button>`).join("") + `</div>`;
+}).join("");
+
+/* mousedown+preventDefault — чтобы не терять курсор в редакторе */
+tokInner.addEventListener("mousedown", e=>{
+  if(e.target.closest(".tbtn")) e.preventDefault();
+});
+tokInner.addEventListener("click", e=>{
+  const b = e.target.closest(".tbtn"); if(!b) return;
+  const k = b.dataset.k, spec = T[k];
+  if(spec.pick) openPop(null, k, b);         // цвет/голос/лицо/звук — сразу выбор
+  else insertToken(k, spec.def);
+});
+
+/* ============================================================
+   6. ПОПОВЕР ПАРАМЕТРА
+   ============================================================ */
+const pop = document.getElementById("pop");
+let popChip = null;
+
+function optLabel(k,v){
+  if(k === "color") return `<i class="dot" style="background:${COLORS[v].c}"></i>
+                            <span>${COLORS[v].n}</span>`;
+  if(k === "voice") return `<span>${VOICES[v].n}</span>`;
+  if(k === "face")  return svg("face") + `<span>${v}</span>`;
+  if(k === "sound") return `<span>${v}</span>`;
+  return `<span>${v}</span>`;
+}
+function openPop(chip, k, anchor){
+  popChip = chip;
+  const key = chip ? chip.dataset.k : k;
+  const spec = T[key];
+  const cur = chip ? chip.dataset.v : spec.def;
+  const el = chip || anchor;
+
+  if(!spec.opts && !chip){ insertToken(key); return; }
+
+  let html = `<div class="ptitle">${spec.n}${spec.wrap?" — сила":""}</div>`;
+  if(spec.opts){
+    html += `<div class="opts">` + spec.opts.map(v =>
+      `<button class="opt${String(v)===String(cur)?" on":""}" data-v="${v}">
+        ${optLabel(key,v)}</button>`).join("") + `</div>`;
+  }
+  if(chip) html += `<div class="prow"><button class="pdel" data-del="1">Удалить</button></div>`;
+  pop.innerHTML = html;
+  pop.classList.add("on");
+
+  const r = el.getBoundingClientRect(), pr = pop.getBoundingClientRect();
+  let x = r.left, y = r.bottom + 8;
+  x = Math.min(Math.max(10, x), innerWidth - pr.width - 10);
+  if(y + pr.height > innerHeight - 10) y = Math.max(10, r.top - pr.height - 8);
+  pop.style.left = x + "px"; pop.style.top = y + "px";
+  pop.dataset.k = key;
+}
+function closePop(){ pop.classList.remove("on"); popChip = null; }
+
+pop.addEventListener("mousedown", e => e.preventDefault());
+pop.addEventListener("click", e=>{
+  const del = e.target.closest("[data-del]");
+  if(del && popChip){
+    // у парных токенов удаляем оба конца
+    if(T[popChip.dataset.k].wrap) removePair(popChip);
+    else popChip.remove();
+    closePop(); sync(); return;
+  }
+  const o = e.target.closest(".opt"); if(!o) return;
+  const v = o.dataset.v, key = pop.dataset.k;
+  if(popChip){
+    popChip.dataset.v = v; renderChip(popChip);
+    if(T[key].wrap){ const p = pairOf(popChip); if(p) p.dataset.v = v; }
+    closePop(); sync();
+  }else{
+    closePop(); insertToken(key, v);
+  }
+});
+function chipsOf(k){ return [...ed.querySelectorAll(`.chip[data-k="${k}"]`)]; }
+function pairOf(chip){
+  const all = chipsOf(chip.dataset.k);
+  const i = all.indexOf(chip);
+  return chip.dataset.role === "open" ? all[i+1] : all[i-1];
+}
+function removePair(chip){ const p = pairOf(chip); if(p) p.remove(); chip.remove(); }
+
+document.addEventListener("mousedown", e=>{
+  if(!pop.contains(e.target) && !e.target.closest(".chip") && !e.target.closest(".tbtn"))
+    closePop();
+});
+addEventListener("scroll", closePop, true);
+addEventListener("resize", closePop);
+
+/* ============================================================
+   7. ЗВУК — синтез, без единого файла
+   ============================================================ */
+let AC = null, soundOn = true;
+const ac = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+function tick(voice){
+  if(!soundOn) return;
+  try{
+  const V = VOICES[voice] || VOICES.S, c = ac();
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = V.w; o.frequency.value = V.f * (.94 + Math.random()*.12);
+  g.gain.setValueAtTime(.055, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + V.d);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + V.d);
+  }catch(e){ soundOn = false; }
+}
+const SFX = {hit:[160,.16,"square"], ping:[880,.18,"sine"],
+             thud:[90,.22,"sawtooth"], coin:[1180,.12,"square"]};
+function sfx(name){
+  if(!soundOn) return;
+  try{
+  const [f,d,w] = SFX[name] || SFX.hit, c = ac();
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = w; o.frequency.setValueAtTime(f, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(f*.5, c.currentTime + d);
+  g.gain.setValueAtTime(.10, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + d);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + d);
+  }catch(e){}
+}
+
+/* ============================================================
+   8. ПЛЕЕР ПРЕВЬЮ
+   ============================================================ */
+const screen = document.getElementById("screen"),
+      caret  = document.getElementById("caret"),
+      portrait = document.getElementById("portrait"),
+      pstate = document.getElementById("pstate");
+const FACES = {
+  1:`<circle cx="12" cy="12" r="8.2"/><circle class="fillmark" cx="9.4" cy="10.3" r="1.05"/>
+     <circle class="fillmark" cx="14.6" cy="10.3" r="1.05"/><path d="M9 14.3q3 2.7 6 0"/>`,
+  2:`<circle cx="12" cy="12" r="8.2"/><circle class="fillmark" cx="9.4" cy="10.3" r="1.05"/>
+     <circle class="fillmark" cx="14.6" cy="10.3" r="1.05"/><path d="M9 15.2h6"/>`,
+  3:`<circle cx="12" cy="12" r="8.2"/><circle class="fillmark" cx="9.4" cy="10.3" r="1.05"/>
+     <circle class="fillmark" cx="14.6" cy="10.3" r="1.05"/><path d="M9 15.6q3-2.7 6 0"/>`,
+  4:`<circle cx="12" cy="12" r="8.2"/><path d="M7.8 9.4l2.6 1.4M16.2 9.4l-2.6 1.4"/>
+     <path d="M9.6 15.2h4.8"/>`,
+  5:`<circle cx="12" cy="12" r="8.2"/><circle class="fillmark" cx="9.4" cy="10" r="1.35"/>
+     <circle class="fillmark" cx="14.6" cy="10" r="1.35"/><ellipse cx="12" cy="15.2" rx="2" ry="2.4"/>`,
+  6:`<circle cx="12" cy="12" r="8.2"/><path d="M8.2 10.4h2.4M13.4 10.4h2.4"/>
+     <path d="M9 15q1.5 1.6 3 0t3 0"/>`,
+};
+
+let gen = 0, waiting = null, playing = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function resetStage(){
+  gen++; playing = false; waiting = null;
+  screen.innerHTML = ""; caret.classList.remove("on");
+  portrait.classList.remove("on"); portrait.innerHTML = "";
+  pstate.textContent = "готово"; setPlayLabel(false);
+}
+document.getElementById("stopBtn").onclick = resetStage;
+
+/* сегменты: обычный текст — одним span (нормальный перенос слов),
+   буквы с эффектом — по одному span (нужен transform)             */
+let seg = null, segColor = null;
+function newSeg(color){
+  seg = document.createElement("span");
+  seg.style.color = color; segColor = color;
+  screen.appendChild(seg); return seg;
+}
+function emit(ch, st, i){
+  if(st.fx){
+    const s = document.createElement("span");
+    s.className = "ch fx fx-" + st.fx;
+    s.style.setProperty("--amp", st.amp);
+    s.style.color = st.color;
+    s.style.animationDelay = fxDelay(st.fx, i) + "s";
+    s.textContent = ch; screen.appendChild(s); seg = null; segColor = null;
+  }else{
+    if(!seg || segColor !== st.color) newSeg(st.color);
+    seg.appendChild(document.createTextNode(ch));
+  }
+}
+function fxDelay(fx,i){
+  if(fx === "shake")  return 0;                       // весь блок синхронно
+  if(fx === "wave")   return -(i % 12) * .09;         // бегущая волна
+  if(fx === "wobble") return -(i % 2) * .4;           // через букву
+  return -(Math.random() * 2).toFixed(2);             // jitter / glitch
+}
+
+async function play(){
+  const ops = readOps();
+  if(!ops.length){ toast("Пусто — сначала напиши текст"); return; }
+  resetStage();
+  const my = ++gen; playing = true;
+  setPlayLabel(true); pstate.textContent = "играет";
+  try{ if(AC && AC.state === "suspended") AC.resume(); }catch(e){}
+
+  const st = {color:"#fff", speed:1, fx:null, amp:2, voice:"S", instant:false};
+  let i = 0;
+  newSeg(st.color);
+
+  for(const o of ops){
+    if(my !== gen) return;
+    if(o.t === "c"){
+      emit(o.ch, st, i++);
+      if(!st.instant){
+        if(o.ch !== " ") tick(st.voice);
+        await sleep(Math.max(6, 34 / st.speed));
+      }
+      continue;
+    }
+    const k = o.k, v = o.v;
+    if(o.close && T[k].wrap){ st.fx = null; seg = null; continue; }
+    switch(k){
+      case "pause":   await sleep(Number(v) * 1000/30); break;
+      case "clock":   await sleep(Number(v)); break;
+      case "speed":   st.speed = Number(v); break;
+      case "bolt":    st.instant = true; break;
+      case "newline": screen.appendChild(document.createElement("br")); seg = null; segColor = null; break;
+      case "advance": await waitClick(my); break;
+      case "close":   await sleep(160); screen.innerHTML = ""; seg = null; segColor = null;
+                      await sleep(160); break;
+      case "color":   st.color = COLORS[v].c; seg = null; segColor = null; break;
+      case "reset":   st.color = "#fff"; st.speed = 1; st.instant = false;
+                      st.fx = null; seg = null; segColor = null; break;
+      case "voice":   st.voice = v; break;
+      case "face":    portrait.classList.add("on");
+                      portrait.innerHTML = `<svg viewBox="0 0 24 24">${FACES[v]}</svg>`; break;
+      case "sound":   sfx(v); break;
+      default:        if(T[k].wrap){ st.fx = k; st.amp = Number(v); seg = null; segColor = null; }
+    }
+  }
+  if(my !== gen) return;
+  playing = false; setPlayLabel(false); pstate.textContent = "конец";
+  caret.classList.add("on");
+}
+function waitClick(my){
+  caret.classList.add("on"); pstate.textContent = "ждёт нажатия";
+  return new Promise(res=>{
+    waiting = ()=>{
+      if(my !== gen) return;
+      caret.classList.remove("on"); pstate.textContent = "играет";
+      waiting = null; res();
+    };
+  });
+}
+document.getElementById("tbox").addEventListener("click", ()=>{ if(waiting) waiting(); });
+
+const playBtn = document.getElementById("playBtn");
+function setPlayLabel(on){
+  playBtn.innerHTML = (on ? svg("stop") : svg("play")) +
+                      `<span>${on ? "Стоп" : "Играть"}</span>`;
+}
+playBtn.onclick = ()=>{ playing ? resetStage() : play(); };
+setPlayLabel(false);
+
+/* ============================================================
+   9. ШАПКА, КОПИРОВАНИЕ, ТОСТ
+   ============================================================ */
+const toastEl = document.getElementById("toast");
+let toastT = null;
+function toast(m){
+  toastEl.textContent = m; toastEl.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(()=>toastEl.classList.remove("on"), 1900);
+}
+document.getElementById("copyBtn").onclick = async ()=>{
+  const s = serialize(readOps());
+  if(!s){ toast("Нечего копировать"); return; }
+  try{ await navigator.clipboard.writeText(s); toast("Скопировано"); }
+  catch{ toast("Не удалось скопировать"); }
+};
+document.getElementById("clrBtn").onclick = ()=>{
+  ed.innerHTML = ""; savedRange = null;
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  sync(); resetStage(); ed.focus();
+};
+const sndBtn = document.getElementById("sndBtn");
+function setSnd(){
+  sndBtn.innerHTML = (soundOn ? svg("volOn") : svg("volOff")) +
+                     `<span>${soundOn ? "Звук" : "Тихо"}</span>`;
+  sndBtn.classList.toggle("on", soundOn);
+}
+sndBtn.onclick = ()=>{ soundOn = !soundOn; setSnd(); };
+setSnd();
+
+/* панель токенов не должна прятаться под мобильной клавиатурой */
+const bar = document.getElementById("tokbar");
+function fitBar(){
+  document.documentElement.style.setProperty("--bar-h",
+    (innerWidth < 960 ? bar.offsetHeight : 0) + "px");
+}
+addEventListener("resize", fitBar);
+if(window.visualViewport){
+  const vv = window.visualViewport;
+  const upd = ()=>{
+    if(innerWidth >= 960){ bar.style.transform = ""; return; }
+    const gap = innerHeight - vv.height - vv.offsetTop;
+    bar.style.transform = gap > 40 ? `translateY(${-gap}px)` : "";
+  };
+  vv.addEventListener("resize", upd); vv.addEventListener("scroll", upd);
+}
+
+/* ============================================================
+   10. ЧЕРНОВИК И СТАРТОВЫЙ ПРИМЕР
+   ============================================================ */
+const KEY = "dialoging.draft.v1";
+function saveDraft(){
+  try{ localStorage.setItem(KEY, JSON.stringify(readOps())); }catch(e){}
+}
+function buildFrom(ops){
+  ed.innerHTML = "";
+  for(const o of ops){
+    if(o.t === "c") ed.appendChild(document.createTextNode(o.ch));
+    else if(T[o.k]) ed.appendChild(makeChip(o.k, o.v, o.close ? "close" : "open"));
+  }
+}
+function loadDraft(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return false;
+    const ops = JSON.parse(raw);
+    if(!Array.isArray(ops) || !ops.length) return false;
+    buildFrom(ops); return true;
+  }catch(e){ return false; }
+}
+(function start(){
+  if(loadDraft()){ sync(); fitBar(); return; }
+  const add = (t)=> ed.appendChild(document.createTextNode(t));
+  const chip = (k,v,role)=> ed.appendChild(makeChip(k,v,role));
+  chip("voice","L"); add("Привет"); chip("pause","3"); add(" как дела?");
+  chip("newline"); add("Я "); chip("color","R"); add("очень"); chip("reset");
+  add(" рад "); chip("shake","2","open"); add("тебя видеть"); chip("shake","2","close");
+  chip("advance");
+  sync(); fitBar();
+})();
+</script>
+</body>
+</html>
