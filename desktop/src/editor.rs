@@ -26,6 +26,11 @@ pub struct State {
 }
 
 impl State {
+    /// Текущее выделение — нужно снаружи, чтобы парный токен обернул его.
+    pub fn selection_for(&self, doc: &Doc) -> Option<(Caret, Caret)> {
+        self.selection(doc.caret)
+    }
+
     pub fn clear_selection(&mut self) {
         self.anchor = None;
     }

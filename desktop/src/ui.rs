@@ -151,3 +151,130 @@ pub fn token_button(ui: &mut Ui, kind: crate::tokens::Kind) -> Response {
     }
     resp
 }
+
+/// Тёмная кнопка-действие.
+pub fn solid_button(ui: &mut Ui, text: &str) -> Response {
+    button_impl(ui, text, theme::INK, theme::WHITE, None)
+}
+
+/// Светлая кнопка с рамкой.
+pub fn light_button(ui: &mut Ui, text: &str) -> Response {
+    button_impl(ui, text, theme::WHITE, theme::INK, Some(theme::LINE_2))
+}
+
+fn button_impl(
+    ui: &mut Ui,
+    text: &str,
+    fill: egui::Color32,
+    ink: egui::Color32,
+    border: Option<egui::Color32>,
+) -> Response {
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_owned(), font::body(), ink);
+    let size = Vec2::new(galley.size().x + 26.0, 34.0);
+    let (rect, resp) = ui.allocate_at_least(size, Sense::click());
+    let r = if resp.hovered() && !resp.is_pointer_button_down_on() {
+        rect.translate(egui::vec2(0.0, -1.0))
+    } else {
+        rect
+    };
+    ui.painter().add(theme::shadow_control().as_shape(r, theme::R_CTRL));
+    ui.painter().rect(
+        r,
+        theme::R_CTRL,
+        fill,
+        egui::Stroke::new(1.0, border.unwrap_or(fill)),
+        egui::StrokeKind::Inside,
+    );
+    ui.painter()
+        .galley(r.center() - galley.size() / 2.0, galley, ink);
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
+
+/// Кнопка-вариант в поповере значения.
+pub fn chip_option(ui: &mut Ui, text: &str, on: bool) -> Response {
+    let ink = if on { theme::WHITE } else { theme::INK };
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_owned(), font::body(), ink);
+    let size = Vec2::new(galley.size().x.max(16.0) + 20.0, 32.0);
+    let (rect, resp) = ui.allocate_at_least(size, Sense::click());
+    let fill = if on {
+        theme::INK
+    } else if resp.hovered() {
+        theme::WHITE
+    } else {
+        theme::CARD
+    };
+    ui.painter().rect(
+        rect,
+        theme::R_CHIP,
+        fill,
+        egui::Stroke::new(1.0, if on { theme::INK } else { theme::LINE_2 }),
+        egui::StrokeKind::Inside,
+    );
+    ui.painter()
+        .galley(rect.center() - galley.size() / 2.0, galley, ink);
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
+
+/// Текстовая кнопка удаления.
+pub fn danger_link(ui: &mut Ui, text: &str) -> Response {
+    let red = egui::Color32::from_rgb(0xC0, 0x39, 0x2B);
+    let galley = ui.painter().layout_no_wrap(text.to_owned(), font::body(), red);
+    let size = Vec2::new(galley.size().x + 18.0, 30.0);
+    let (rect, resp) = ui.allocate_at_least(size, Sense::click());
+    if resp.hovered() {
+        ui.painter()
+            .rect_filled(rect, theme::R_CHIP, egui::Color32::from_rgba_unmultiplied(192, 57, 43, 22));
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    ui.painter()
+        .galley(rect.center() - galley.size() / 2.0, galley, red);
+    resp
+}
+
+/// Тёмная кнопка с иконкой воспроизведения или остановки.
+pub fn icon_button(ui: &mut Ui, text: &str, stop: bool) -> Response {
+    use crate::icons;
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_owned(), font::body(), theme::WHITE);
+    let size = Vec2::new(galley.size().x + 15.0 + 7.0 + 26.0, 36.0);
+    let (rect, resp) = ui.allocate_at_least(size, Sense::click());
+    let r = if resp.hovered() && !resp.is_pointer_button_down_on() {
+        rect.translate(egui::vec2(0.0, -1.0))
+    } else {
+        rect
+    };
+    ui.painter().add(theme::shadow_control().as_shape(r, theme::R_CTRL));
+    ui.painter()
+        .rect_filled(r, theme::R_CTRL, theme::INK);
+    let ir = egui::Rect::from_center_size(
+        egui::pos2(r.left() + 13.0 + 7.5, r.center().y),
+        Vec2::splat(15.0),
+    );
+    icons::draw_ui(
+        ui.painter(),
+        ir,
+        if stop { icons::Ui::Stop } else { icons::Ui::Play },
+        theme::WHITE,
+        1.7,
+    );
+    ui.painter().galley(
+        egui::pos2(r.left() + 13.0 + 15.0 + 7.0, r.center().y - galley.size().y / 2.0),
+        galley,
+        theme::WHITE,
+    );
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
