@@ -27,6 +27,9 @@ struct Picker {
     pos: egui::Pos2,
     hsv: egui::ecolor::Hsva,
     hex: String,
+    /// Первый кадр после открытия: тот же клик, что открыл поповер, иначе
+    /// был бы засчитан как «клик мимо» и закрыл бы его немедленно.
+    fresh: bool,
 }
 
 pub struct App {
@@ -219,6 +222,7 @@ impl App {
             pos,
             hsv: egui::ecolor::Hsva::from(egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2])),
             hex: palette::hex(rgb),
+            fresh: true,
         });
     }
 
@@ -356,6 +360,14 @@ impl App {
                         }
                     });
             });
+
+        // Клик, которым поповер открыли, не должен его же и закрыть.
+        if let Some(p) = self.picker.as_mut() {
+            if p.fresh {
+                p.fresh = false;
+                return;
+            }
+        }
 
         // клик мимо поповера закрывает его
         let clicked_outside = ctx.input(|i| i.pointer.any_click())
