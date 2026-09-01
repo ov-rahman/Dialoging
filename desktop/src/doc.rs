@@ -33,9 +33,6 @@ impl Node {
     pub fn text(s: &str) -> Self {
         Node::Text(s.to_owned())
     }
-    pub fn is_text(&self) -> bool {
-        matches!(self, Node::Text(_))
-    }
 }
 
 /// Позиция каретки: индекс узла и смещение в байтах внутри текста.
@@ -54,10 +51,6 @@ pub struct Doc {
 }
 
 impl Doc {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Документ из готового списка узлов, каретка в конец.
     pub fn from_nodes(nodes: Vec<Node>) -> Self {
         let mut d = Self {
@@ -69,15 +62,19 @@ impl Doc {
         d
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
-
     /// Сколько открывающих токенов — это число в счётчике на экране.
     pub fn token_count(&self) -> usize {
         self.nodes
             .iter()
-            .filter(|n| matches!(n, Node::Token { role: Role::Open, .. }))
+            .filter(|n| {
+                matches!(
+                    n,
+                    Node::Token {
+                        role: Role::Open,
+                        ..
+                    }
+                )
+            })
             .count()
     }
 
@@ -278,8 +275,7 @@ impl Doc {
             }
             _ => {
                 let at = self.split_at_caret();
-                self.nodes
-                    .insert(at, Node::token(kind, value, Role::Close));
+                self.nodes.insert(at, Node::token(kind, value, Role::Close));
                 self.nodes.insert(at, Node::token(kind, value, Role::Open));
                 self.caret = Caret {
                     node: at + 1,
@@ -305,7 +301,10 @@ impl Doc {
             Role::Open => {
                 let mut depth = 0;
                 for (i, n) in self.nodes.iter().enumerate().skip(idx + 1) {
-                    if let Node::Token { kind: k, role: r, .. } = n {
+                    if let Node::Token {
+                        kind: k, role: r, ..
+                    } = n
+                    {
                         if *k != kind {
                             continue;
                         }
@@ -323,7 +322,10 @@ impl Doc {
             Role::Close => {
                 let mut depth = 0;
                 for i in (0..idx).rev() {
-                    if let Node::Token { kind: k, role: r, .. } = &self.nodes[i] {
+                    if let Node::Token {
+                        kind: k, role: r, ..
+                    } = &self.nodes[i]
+                    {
                         if *k != kind {
                             continue;
                         }
@@ -373,7 +375,6 @@ impl Doc {
         }
     }
 
-
     // ------------------------------------------------------------ движение каретки
 
     /// Приводит позицию к канонической форме (см. `clamp_caret`).
@@ -394,7 +395,10 @@ impl Doc {
         }
         if c.offset == 0 && c.node > 0 {
             if let Some(Node::Text(prev)) = self.nodes.get(c.node - 1) {
-                return Caret { node: c.node - 1, offset: prev.len() };
+                return Caret {
+                    node: c.node - 1,
+                    offset: prev.len(),
+                };
             }
         }
         c
@@ -409,7 +413,10 @@ impl Doc {
                     .next_back()
                     .map(|(i, _)| i)
                     .unwrap_or(0);
-                return self.canon(Caret { node: c.node, offset: prev });
+                return self.canon(Caret {
+                    node: c.node,
+                    offset: prev,
+                });
             }
         }
         if c.node == 0 {
@@ -418,9 +425,15 @@ impl Doc {
         let target = c.node - 1;
         if let Some(Node::Text(t)) = self.nodes.get(target) {
             let prev = t.char_indices().next_back().map(|(i, _)| i).unwrap_or(0);
-            return self.canon(Caret { node: target, offset: prev });
+            return self.canon(Caret {
+                node: target,
+                offset: prev,
+            });
         }
-        self.canon(Caret { node: target, offset: 0 })
+        self.canon(Caret {
+            node: target,
+            offset: 0,
+        })
     }
 
     pub fn caret_right(&self, c: Caret) -> Caret {
@@ -432,7 +445,10 @@ impl Doc {
                     .nth(1)
                     .map(|(i, _)| c.offset + i)
                     .unwrap_or(t.len());
-                return self.canon(Caret { node: c.node, offset: next });
+                return self.canon(Caret {
+                    node: c.node,
+                    offset: next,
+                });
             }
         }
         self.canon(Caret {
@@ -488,7 +504,7 @@ impl Doc {
         // начало первого узла
         if let Some(Node::Text(t)) = self.nodes.get_mut(a.node) {
             t.truncate(a.offset.min(t.len()));
-        } else if !matches!(self.nodes.get(a.node), None) && a.offset == 0 {
+        } else if self.nodes.get(a.node).is_some() && a.offset == 0 {
             // каретка стояла перед токеном — сам токен попадает в удаление
             self.nodes.remove(a.node);
         }
@@ -598,7 +614,16 @@ mod tests {
         let idx = d
             .nodes
             .iter()
-            .position(|n| matches!(n, Node::Token { kind: Kind::Shake, role: Role::Open, .. }))
+            .position(|n| {
+                matches!(
+                    n,
+                    Node::Token {
+                        kind: Kind::Shake,
+                        role: Role::Open,
+                        ..
+                    }
+                )
+            })
             .unwrap();
         d.nodes.remove(idx);
         d.normalize();
@@ -620,7 +645,9 @@ mod tests {
             let idx = d
                 .nodes
                 .iter()
-                .position(|n| matches!(n, Node::Token { kind: Kind::Shake, role: r, .. } if *r == role))
+                .position(
+                    |n| matches!(n, Node::Token { kind: Kind::Shake, role: r, .. } if *r == role),
+                )
                 .unwrap();
             d.remove_pair(idx);
             let s = d.serialize();
@@ -689,7 +716,15 @@ mod tests {
         let idx = d
             .nodes
             .iter()
-            .position(|n| matches!(n, Node::Token { kind: Kind::Shake, .. }))
+            .position(|n| {
+                matches!(
+                    n,
+                    Node::Token {
+                        kind: Kind::Shake,
+                        ..
+                    }
+                )
+            })
             .unwrap();
         d.set_value(idx, "3");
         assert!(d.serialize().contains("{shake:3}"));
@@ -757,14 +792,21 @@ mod tests {
             c = d.caret_right(c);
             offs.push(c.offset);
         }
-        assert_eq!(offs, vec![0, 2, 4, 6, 8, 10, 12], "шаг должен быть по 2 байта");
+        assert_eq!(
+            offs,
+            vec![0, 2, 4, 6, 8, 10, 12],
+            "шаг должен быть по 2 байта"
+        );
     }
 
     #[test]
     fn удаление_выделения_внутри_одного_узла() {
         let mut d = Doc::from_nodes(vec![Node::text("Привет мир")]);
         let a = Caret { node: 0, offset: 0 };
-        let b = Caret { node: 0, offset: "Привет ".len() };
+        let b = Caret {
+            node: 0,
+            offset: "Привет ".len(),
+        };
         d.delete_range(a, b);
         assert_eq!(d.serialize(), "мир");
     }

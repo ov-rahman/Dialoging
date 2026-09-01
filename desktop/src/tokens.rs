@@ -98,7 +98,6 @@ pub struct Free {
 
 #[derive(Clone, Debug)]
 pub struct Spec {
-    pub kind: Kind,
     pub group: Group,
     pub name: &'static str,
     /// Значение по умолчанию при вставке одним кликом.
@@ -211,7 +210,15 @@ pub fn spec(kind: Kind) -> Spec {
             true,
         ),
 
-        Shake => (Motion, "Тряска", Some("2"), AMP, Some(FREE_AMP), true, false),
+        Shake => (
+            Motion,
+            "Тряска",
+            Some("2"),
+            AMP,
+            Some(FREE_AMP),
+            true,
+            false,
+        ),
         Jitter => (
             Motion,
             "Дрожь букв",
@@ -248,7 +255,6 @@ pub fn spec(kind: Kind) -> Spec {
         ),
     };
     Spec {
-        kind,
         group,
         name,
         default,
@@ -448,7 +454,10 @@ mod tests {
     #[test]
     fn нормализация_текстовых_значений() {
         assert_eq!(normalize(Kind::Voice, " SANS ").as_deref(), Some("SANS"));
-        assert_eq!(normalize(Kind::Color, "#8ED1FC").as_deref(), Some("#8ED1FC"));
+        assert_eq!(
+            normalize(Kind::Color, "#8ED1FC").as_deref(),
+            Some("#8ED1FC")
+        );
         assert_eq!(normalize(Kind::Sound, ""), None);
     }
 

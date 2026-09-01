@@ -54,10 +54,6 @@ pub mod font {
     pub fn display() -> FontId {
         sans(30.0)
     }
-    /// Число в счётчике — тот же кегль, что у заголовка.
-    pub fn counter() -> FontId {
-        sans(32.0)
-    }
     /// Обычный текст интерфейса.
     pub fn body() -> FontId {
         sans(14.0)
@@ -144,15 +140,16 @@ pub fn install_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
 
     let mut add = |name: &str, bytes: &'static [u8]| {
-        fonts
-            .font_data
-            .insert(name.to_owned(), std::sync::Arc::new(FontData::from_static(bytes)));
+        fonts.font_data.insert(
+            name.to_owned(),
+            std::sync::Arc::new(FontData::from_static(bytes)),
+        );
     };
+    add("golos", include_bytes!("../assets/GolosText-Regular.ttf"));
     add(
-        "golos",
-        include_bytes!("../assets/GolosText-Regular.ttf"),
+        "golos-medium",
+        include_bytes!("../assets/GolosText-Medium.ttf"),
     );
-    add("golos-medium", include_bytes!("../assets/GolosText-Medium.ttf"));
     add(
         "golos-semibold",
         include_bytes!("../assets/GolosText-SemiBold.ttf"),
@@ -195,57 +192,56 @@ pub fn install_style(ctx: &egui::Context) {
     // В egui 0.36 стиль задаётся отдельно для светлой и тёмной темы;
     // приложение намеренно однотемное, поэтому пишем один и тот же в обе.
     ctx.all_styles_mut(|style| {
-    let v = &mut style.visuals;
-    v.dark_mode = false;
-    v.override_text_color = Some(INK);
-    v.panel_fill = BG;
-    v.window_fill = WHITE;
-    v.extreme_bg_color = WHITE;
-    v.faint_bg_color = CARD;
-    v.window_stroke = egui::Stroke::new(1.0, LINE_2);
-    v.window_corner_radius = R_PANEL;
-    v.window_shadow = shadow_pop();
-    v.popup_shadow = shadow_pop();
-    v.selection.bg_fill = ACCENT_SOFT;
-    v.selection.stroke = egui::Stroke::new(1.0, ACCENT_INK);
+        let v = &mut style.visuals;
+        v.dark_mode = false;
+        v.override_text_color = Some(INK);
+        v.panel_fill = BG;
+        v.window_fill = WHITE;
+        v.extreme_bg_color = WHITE;
+        v.faint_bg_color = CARD;
+        v.window_stroke = egui::Stroke::new(1.0, LINE_2);
+        v.window_corner_radius = R_PANEL;
+        v.window_shadow = shadow_pop();
+        v.popup_shadow = shadow_pop();
+        v.selection.bg_fill = ACCENT_SOFT;
+        v.selection.stroke = egui::Stroke::new(1.0, ACCENT_INK);
 
-    for w in [
-        &mut v.widgets.noninteractive,
-        &mut v.widgets.inactive,
-        &mut v.widgets.hovered,
-        &mut v.widgets.active,
-        &mut v.widgets.open,
-    ] {
-        w.corner_radius = R_CTRL;
-        w.bg_stroke = egui::Stroke::new(1.0, LINE_2);
-        w.fg_stroke = egui::Stroke::new(1.0, INK);
-        w.expansion = 0.0;
-    }
-    v.widgets.noninteractive.bg_fill = CARD;
-    v.widgets.inactive.bg_fill = WHITE;
-    v.widgets.inactive.weak_bg_fill = WHITE;
-    v.widgets.hovered.bg_fill = WHITE;
-    v.widgets.hovered.weak_bg_fill = WHITE;
-    v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, INK_4);
-    v.widgets.active.bg_fill = INK;
-    v.widgets.active.weak_bg_fill = INK;
+        for w in [
+            &mut v.widgets.noninteractive,
+            &mut v.widgets.inactive,
+            &mut v.widgets.hovered,
+            &mut v.widgets.active,
+            &mut v.widgets.open,
+        ] {
+            w.corner_radius = R_CTRL;
+            w.bg_stroke = egui::Stroke::new(1.0, LINE_2);
+            w.fg_stroke = egui::Stroke::new(1.0, INK);
+            w.expansion = 0.0;
+        }
+        v.widgets.noninteractive.bg_fill = CARD;
+        v.widgets.inactive.bg_fill = WHITE;
+        v.widgets.inactive.weak_bg_fill = WHITE;
+        v.widgets.hovered.bg_fill = WHITE;
+        v.widgets.hovered.weak_bg_fill = WHITE;
+        v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, INK_4);
+        v.widgets.active.bg_fill = INK;
+        v.widgets.active.weak_bg_fill = INK;
 
-    let s = &mut style.spacing;
-    s.item_spacing = egui::vec2(8.0, 8.0);
-    s.button_padding = egui::vec2(12.0, 9.0);
-    s.window_margin = Margin::same(12);
-    s.menu_margin = Margin::same(8);
-    s.interact_size.y = 34.0;
+        let s = &mut style.spacing;
+        s.item_spacing = egui::vec2(8.0, 8.0);
+        s.button_padding = egui::vec2(12.0, 9.0);
+        s.window_margin = Margin::same(12);
+        s.menu_margin = Margin::same(8);
+        s.interact_size.y = 34.0;
 
-    style.text_styles = [
-        (egui::TextStyle::Heading, font::display()),
-        (egui::TextStyle::Body, font::body()),
-        (egui::TextStyle::Button, font::body()),
-        (egui::TextStyle::Small, font::eyebrow()),
-        (egui::TextStyle::Monospace, font::code()),
-    ]
-    .into();
-
+        style.text_styles = [
+            (egui::TextStyle::Heading, font::display()),
+            (egui::TextStyle::Body, font::body()),
+            (egui::TextStyle::Button, font::body()),
+            (egui::TextStyle::Small, font::eyebrow()),
+            (egui::TextStyle::Monospace, font::code()),
+        ]
+        .into();
     });
 }
 

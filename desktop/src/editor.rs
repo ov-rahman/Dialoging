@@ -162,10 +162,7 @@ enum Atom {
         size: Vec2,
     },
     /// Токен переноса строки: рисуется чипом и переносит строку.
-    Break {
-        node: usize,
-        size: Vec2,
-    },
+    Break { node: usize, size: Vec2 },
 }
 
 impl Atom {
@@ -219,9 +216,9 @@ fn build_atoms(ui: &Ui, doc: &Doc) -> Vec<Atom> {
         match n {
             Node::Text(t) => {
                 for (off, w) in split_words(t) {
-                    let galley =
-                        ui.painter()
-                            .layout_no_wrap(w.clone(), font::editor(), theme::INK);
+                    let galley = ui
+                        .painter()
+                        .layout_no_wrap(w.clone(), font::editor(), theme::INK);
                     atoms.push(Atom::Word {
                         node: ni,
                         start: off,
@@ -264,10 +261,7 @@ fn place(atoms: &[Atom], origin: egui::Pos2, max_w: f32) -> (Vec<Placed>, f32) {
             x = origin.x;
         }
         let y = origin.y + line as f32 * LINE_H;
-        let rect = Rect::from_min_size(
-            egui::pos2(x, y + (LINE_H - s.y) / 2.0),
-            s,
-        );
+        let rect = Rect::from_min_size(egui::pos2(x, y + (LINE_H - s.y) / 2.0), s);
         out.push(Placed { idx: i, rect, line });
         x += s.x;
         if matches!(a, Atom::Break { .. }) {
@@ -283,7 +277,10 @@ fn place(atoms: &[Atom], origin: egui::Pos2, max_w: f32) -> (Vec<Placed>, f32) {
 /// Байтовое смещение внутри слова по экранной координате X.
 fn offset_in_word(ui: &Ui, text: &str, local_x: f32) -> usize {
     let mut best = (0usize, f32::MAX);
-    for (i, _) in text.char_indices().chain(std::iter::once((text.len(), ' '))) {
+    for (i, _) in text
+        .char_indices()
+        .chain(std::iter::once((text.len(), ' ')))
+    {
         let g = ui
             .painter()
             .layout_no_wrap(text[..i].to_owned(), font::editor(), theme::INK);
@@ -350,13 +347,7 @@ fn caret_rect(
     }
 }
 
-fn caret_at_pos(
-    ui: &Ui,
-    atoms: &[Atom],
-    placed: &[Placed],
-    doc: &Doc,
-    pos: egui::Pos2,
-) -> Caret {
+fn caret_at_pos(ui: &Ui, atoms: &[Atom], placed: &[Placed], doc: &Doc, pos: egui::Pos2) -> Caret {
     // ближайшая строка
     let line = placed
         .iter()
@@ -435,9 +426,9 @@ pub fn show(ui: &mut Ui, doc: &mut Doc, st: &mut State) -> (Response, Action) {
         ui.memory_mut(|m| m.request_focus(id));
         if let Some(pos) = resp.interact_pointer_pos() {
             // клик по чипу открывает выбор значения
-            let hit_chip = placed.iter().find(|p| {
-                p.rect.contains(pos) && !matches!(atoms[p.idx], Atom::Word { .. })
-            });
+            let hit_chip = placed
+                .iter()
+                .find(|p| p.rect.contains(pos) && !matches!(atoms[p.idx], Atom::Word { .. }));
             if let (Some(p), true) = (hit_chip, resp.clicked()) {
                 action = Action::EditChip(atoms[p.idx].node());
             }
@@ -557,8 +548,7 @@ pub fn show(ui: &mut Ui, doc: &mut Doc, st: &mut State) -> (Response, Action) {
                 }
             } else {
                 let n = atoms[p.idx].node();
-                let inside =
-                    (n, 0) >= (a.node, a.offset) && (n + 1, 0) <= (b.node, b.offset + 1);
+                let inside = (n, 0) >= (a.node, a.offset) && (n + 1, 0) <= (b.node, b.offset + 1);
                 if inside {
                     ui.painter()
                         .rect_filled(p.rect.expand(2.0), 5.0, theme::ACCENT_SOFT);
@@ -571,8 +561,7 @@ pub fn show(ui: &mut Ui, doc: &mut Doc, st: &mut State) -> (Response, Action) {
     for p in &placed {
         match &atoms[p.idx] {
             Atom::Word { galley, .. } => {
-                ui.painter()
-                    .galley(p.rect.min, galley.clone(), theme::INK);
+                ui.painter().galley(p.rect.min, galley.clone(), theme::INK);
             }
             Atom::Chip {
                 kind, value, role, ..

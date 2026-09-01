@@ -75,9 +75,9 @@ pub struct Player {
     glyphs: Vec<G>,
     run: Run,
     pub phase: Phase,
-    /// Сколько символов уже озвучено — чтобы звук шёл ровно по одному разу.
-    pub ticks: usize,
     pub last_voice: String,
+    /// Сработавшие `{snd:…}` — приложение забирает их и играет.
+    pub pending_sfx: Vec<String>,
 }
 
 impl Default for Player {
@@ -89,8 +89,8 @@ impl Default for Player {
             glyphs: Vec::new(),
             run: Run::default(),
             phase: Phase::Idle,
-            ticks: 0,
             last_voice: "S".into(),
+            pending_sfx: Vec::new(),
         }
     }
 }
@@ -220,7 +220,7 @@ impl Player {
             }
             Kind::Voice => self.run.voice = value.to_owned(),
             Kind::Face => self.run.portrait = Some(value.to_owned()),
-            Kind::Sound => {} // звук события — снаружи
+            Kind::Sound => self.pending_sfx.push(value.to_owned()),
             Kind::Shake | Kind::Jitter | Kind::Wave | Kind::Wobble | Kind::Glitch => {
                 self.run.fx = Some(Fx {
                     kind,
@@ -275,7 +275,7 @@ fn fx_transform(fx: Fx, t: f64, i: usize, seed: f32) -> (Vec2, f32) {
         }
         // через букву в противофазе
         Kind::Wobble => {
-            let dir = if i % 2 == 0 { 1.0 } else { -1.0 };
+            let dir = if i.is_multiple_of(2) { 1.0 } else { -1.0 };
             let p = t / 0.8 * TAU;
             (Vec2::ZERO, (3.0 * a * dir * p.sin()).to_radians())
         }
@@ -326,10 +326,7 @@ pub fn stage(ui: &mut Ui, player: &Player, height: f32) -> bool {
         );
         let n = face.parse::<u8>().unwrap_or(1);
         crate::icons::draw_face(p, box_r.shrink(12.0), n, theme::WHITE, 1.7);
-        area = Rect::from_min_max(
-            egui::pos2(box_r.right() + 14.0, area.top()),
-            area.max,
-        );
+        area = Rect::from_min_max(egui::pos2(box_r.right() + 14.0, area.top()), area.max);
     }
 
     let t = ui.input(|i| i.time);
@@ -362,11 +359,8 @@ pub fn stage(ui: &mut Ui, player: &Player, height: f32) -> bool {
             Some(fx) => fx_transform(fx, t, g.fx_i, g.seed),
             None => (Vec2::ZERO, 0.0),
         };
-        let mut shape = egui::epaint::TextShape::new(
-            egui::pos2(x + off.x, y + off.y),
-            galley,
-            g.color,
-        );
+        let mut shape =
+            egui::epaint::TextShape::new(egui::pos2(x + off.x, y + off.y), galley, g.color);
         shape.angle = angle;
         ui.painter().add(shape);
         x += w;

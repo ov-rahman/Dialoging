@@ -49,21 +49,17 @@ pub fn panel<R>(
 
             // Разделитель во всю ширину карточки.
             let r = ui.available_rect_before_wrap();
-            ui.painter().hline(
-                r.x_range(),
-                r.top(),
-                egui::Stroke::new(1.0, theme::LINE_2),
-            );
+            ui.painter()
+                .hline(r.x_range(), r.top(), egui::Stroke::new(1.0, theme::LINE_2));
             ui.add_space(1.0);
 
-            let out = egui::Frame::new()
+            egui::Frame::new()
                 .inner_margin(egui::Margin::same(18))
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     body(ui)
                 })
-                .inner;
-            out
+                .inner
         })
         .inner
 }
@@ -179,7 +175,8 @@ fn button_impl(
     } else {
         rect
     };
-    ui.painter().add(theme::shadow_control().as_shape(r, theme::R_CTRL));
+    ui.painter()
+        .add(theme::shadow_control().as_shape(r, theme::R_CTRL));
     ui.painter().rect(
         r,
         theme::R_CTRL,
@@ -228,12 +225,17 @@ pub fn chip_option(ui: &mut Ui, text: &str, on: bool) -> Response {
 /// Текстовая кнопка удаления.
 pub fn danger_link(ui: &mut Ui, text: &str) -> Response {
     let red = egui::Color32::from_rgb(0xC0, 0x39, 0x2B);
-    let galley = ui.painter().layout_no_wrap(text.to_owned(), font::body(), red);
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_owned(), font::body(), red);
     let size = Vec2::new(galley.size().x + 18.0, 30.0);
     let (rect, resp) = ui.allocate_at_least(size, Sense::click());
     if resp.hovered() {
-        ui.painter()
-            .rect_filled(rect, theme::R_CHIP, egui::Color32::from_rgba_unmultiplied(192, 57, 43, 22));
+        ui.painter().rect_filled(
+            rect,
+            theme::R_CHIP,
+            egui::Color32::from_rgba_unmultiplied(192, 57, 43, 22),
+        );
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
     ui.painter()
@@ -254,9 +256,9 @@ pub fn icon_button(ui: &mut Ui, text: &str, stop: bool) -> Response {
     } else {
         rect
     };
-    ui.painter().add(theme::shadow_control().as_shape(r, theme::R_CTRL));
     ui.painter()
-        .rect_filled(r, theme::R_CTRL, theme::INK);
+        .add(theme::shadow_control().as_shape(r, theme::R_CTRL));
+    ui.painter().rect_filled(r, theme::R_CTRL, theme::INK);
     let ir = egui::Rect::from_center_size(
         egui::pos2(r.left() + 13.0 + 7.5, r.center().y),
         Vec2::splat(15.0),
@@ -264,12 +266,19 @@ pub fn icon_button(ui: &mut Ui, text: &str, stop: bool) -> Response {
     icons::draw_ui(
         ui.painter(),
         ir,
-        if stop { icons::Ui::Stop } else { icons::Ui::Play },
+        if stop {
+            icons::Ui::Stop
+        } else {
+            icons::Ui::Play
+        },
         theme::WHITE,
         1.7,
     );
     ui.painter().galley(
-        egui::pos2(r.left() + 13.0 + 15.0 + 7.0, r.center().y - galley.size().y / 2.0),
+        egui::pos2(
+            r.left() + 13.0 + 15.0 + 7.0,
+            r.center().y - galley.size().y / 2.0,
+        ),
         galley,
         theme::WHITE,
     );

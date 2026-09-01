@@ -16,6 +16,9 @@ eframe = { version = "0.36.1", default-features = false, features = [
 ] }
 egui = "0.36.1"
 
+# Звук печати синтезируется на лету — звуковых файлов в проекте нет.
+rodio = { version = "0.22.2", default-features = false, features = ["playback"] }
+
 [profile.release]
 opt-level = 3
 lto = true

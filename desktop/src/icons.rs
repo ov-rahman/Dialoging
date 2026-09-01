@@ -148,8 +148,10 @@ pub fn draw_token(p: &Painter, rect: Rect, kind: Kind, color: Color32, width: f3
             // Разомкнутое кольцо со стрелкой на конце: разрыв сверху слева,
             // как в контурном наборе веб-версии.
             pen.arc(12.0, 12.0, 7.8, 200.0, 480.0);
-            let tip = (12.0 + 7.8 * 200f32.to_radians().cos(),
-                       12.0 + 7.8 * 200f32.to_radians().sin());
+            let tip = (
+                12.0 + 7.8 * 200f32.to_radians().cos(),
+                12.0 + 7.8 * 200f32.to_radians().sin(),
+            );
             pen.fill_poly(&[
                 (tip.0 - 2.6, tip.1 - 1.2),
                 (tip.0 + 1.4, tip.1 - 2.6),
@@ -224,10 +226,6 @@ pub fn draw_token(p: &Painter, rect: Rect, kind: Kind, color: Color32, width: f3
 pub enum Ui {
     Play,
     Stop,
-    VolumeOn,
-    VolumeOff,
-    Check,
-    Cross,
 }
 
 pub fn draw_ui(p: &Painter, rect: Rect, ico: Ui, color: Color32, width: f32) {
@@ -235,34 +233,6 @@ pub fn draw_ui(p: &Painter, rect: Rect, ico: Ui, color: Color32, width: f32) {
     match ico {
         Ui::Play => pen.fill_poly(&[(7.0, 4.6), (19.0, 12.0), (7.0, 19.4)]),
         Ui::Stop => pen.rrect(6.0, 6.0, 12.0, 12.0, 2.0, 0.0),
-        Ui::VolumeOn => {
-            pen.closed(&[
-                (4.0, 9.4),
-                (7.4, 9.4),
-                (11.8, 5.8),
-                (11.8, 18.2),
-                (7.4, 14.6),
-                (4.0, 14.6),
-            ]);
-            pen.arc(15.2, 12.0, 3.7, -60.0, 60.0);
-        }
-        Ui::VolumeOff => {
-            pen.closed(&[
-                (4.0, 9.4),
-                (7.4, 9.4),
-                (11.8, 5.8),
-                (11.8, 18.2),
-                (7.4, 14.6),
-                (4.0, 14.6),
-            ]);
-            pen.poly(&[(15.4, 10.0), (19.6, 14.0)]);
-            pen.poly(&[(19.6, 10.0), (15.4, 14.0)]);
-        }
-        Ui::Check => pen.poly(&[(5.0, 12.4), (10.0, 17.0), (19.0, 7.0)]),
-        Ui::Cross => {
-            pen.poly(&[(6.5, 6.5), (17.5, 17.5)]);
-            pen.poly(&[(17.5, 6.5), (6.5, 17.5)]);
-        }
     }
 }
 

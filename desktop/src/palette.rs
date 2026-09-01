@@ -5,7 +5,9 @@
 //! выглядит как отладочный виджет и ломает оформление.
 
 use crate::theme;
-use egui::{ecolor::Hsva, Color32, Mesh, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, Vec2};
+use egui::{
+    ecolor::Hsva, Color32, Mesh, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
+};
 
 /// Цвет, добавленный пользователем в свою палитру.
 #[derive(Clone, PartialEq, Debug)]
@@ -140,12 +142,18 @@ fn hue_strip(ui: &mut Ui, hsv: &mut Hsva, width: f32) -> Response {
     }
     let x = rect.left() + hsv.h * rect.width();
     ui.painter().rect_filled(
-        Rect::from_center_size(egui::pos2(x, rect.center().y), Vec2::new(4.0, rect.height() + 6.0)),
+        Rect::from_center_size(
+            egui::pos2(x, rect.center().y),
+            Vec2::new(4.0, rect.height() + 6.0),
+        ),
         2.0,
         Color32::WHITE,
     );
     ui.painter().rect_stroke(
-        Rect::from_center_size(egui::pos2(x, rect.center().y), Vec2::new(4.0, rect.height() + 6.0)),
+        Rect::from_center_size(
+            egui::pos2(x, rect.center().y),
+            Vec2::new(4.0, rect.height() + 6.0),
+        ),
         egui::CornerRadius::same(2),
         Stroke::new(1.0, Color32::from_black_alpha(80)),
         StrokeKind::Outside,

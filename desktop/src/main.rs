@@ -2,11 +2,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod audio;
+mod doc;
+mod editor;
 mod icons;
 mod palette;
 mod player;
-mod doc;
-mod editor;
 mod theme;
 mod tokens;
 mod ui;

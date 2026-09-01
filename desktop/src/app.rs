@@ -5,6 +5,7 @@
 //! Большой заголовок с веб-страницы сюда не переносится — в инструменте он
 //! съедал бы высоту, которая нужна для работы.
 
+use crate::audio::Audio;
 use crate::doc::{Doc, Node, Role};
 use crate::editor;
 use crate::palette::{self, Custom};
@@ -34,6 +35,7 @@ pub struct App {
     picker: Option<Picker>,
     custom: Custom,
     player: Player,
+    audio: Audio,
     sound_on: bool,
     /// Автозапуск проигрывания — только для снятия скриншотов при разработке.
     dev_autoplay: bool,
@@ -47,6 +49,7 @@ impl Default for App {
             picker: None,
             custom: Custom::default(),
             player: Player::default(),
+            audio: Audio::new(),
             sound_on: true,
             dev_autoplay: false,
         }
@@ -76,8 +79,10 @@ fn demo_doc() -> Doc {
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         theme::install(&cc.egui_ctx);
-        let mut app = Self::default();
-        app.dev_autoplay = std::env::var("DIALOGING_DEV_PLAY").is_ok();
+        let mut app = Self {
+            dev_autoplay: std::env::var("DIALOGING_DEV_PLAY").is_ok(),
+            ..Self::default()
+        };
         // Только для снятия скриншотов при разработке.
         if let Ok(k) = std::env::var("DIALOGING_DEV_PICKER") {
             let kind = match k.as_str() {
@@ -111,9 +116,21 @@ impl App {
                 if ui::ghost(ui, "Очистить", false).clicked() {
                     self.doc = Doc::default();
                 }
-                let label = if self.sound_on { "Звук" } else { "Тихо" };
-                if ui::ghost(ui, label, self.sound_on).clicked() {
+                let has_device = self.audio.available();
+                let label = if !has_device {
+                    "Нет устройства"
+                } else if self.sound_on {
+                    "Звук"
+                } else {
+                    "Тихо"
+                };
+                let r = ui::ghost(ui, label, self.sound_on && has_device);
+                if r.clicked() && has_device {
                     self.sound_on = !self.sound_on;
+                    self.audio.enabled = self.sound_on;
+                }
+                if !has_device {
+                    r.on_hover_text("Звуковое устройство не найдено");
                 }
                 ui.add_space(12.0);
                 ui.label(
@@ -154,12 +171,11 @@ impl App {
                     font::eyebrow(),
                     theme::INK_3,
                 );
-                let (lr, _) = ui.allocate_exact_size(
-                    egui::vec2(g.size().x + 2.0, 38.0),
-                    egui::Sense::hover(),
-                );
+                let (lr, _) = ui
+                    .allocate_exact_size(egui::vec2(g.size().x + 2.0, 38.0), egui::Sense::hover());
                 let gy = lr.center().y - g.size().y / 2.0;
-                ui.painter().galley(egui::pos2(lr.left(), gy), g, theme::INK_3);
+                ui.painter()
+                    .galley(egui::pos2(lr.left(), gy), g, theme::INK_3);
 
                 for kind in tokens::ALL {
                     if tokens::spec(kind).group != *group {
@@ -223,7 +239,9 @@ impl App {
     }
 
     fn picker_ui(&mut self, ctx: &egui::Context) {
-        let Some(p) = self.picker.as_ref() else { return };
+        let Some(p) = self.picker.as_ref() else {
+            return;
+        };
         let (kind, target, pos) = (p.kind, p.target, p.pos);
         let sp = tokens::spec(kind);
         let is_color = kind == Kind::Color;
@@ -250,12 +268,21 @@ impl App {
                         ui.add_space(9.0);
 
                         if is_color {
-                            let cur = self.picker.as_ref().map(|p| p.input.clone()).unwrap_or_default();
+                            let cur = self
+                                .picker
+                                .as_ref()
+                                .map(|p| p.input.clone())
+                                .unwrap_or_default();
                             let mut hsv = self.picker.as_ref().unwrap().hsv;
                             let mut hexf = self.picker.as_ref().unwrap().hex.clone();
-                            if let Some(v) =
-                                palette::picker(ui, &mut hsv, &mut hexf, &mut self.custom, &cur, width)
-                            {
+                            if let Some(v) = palette::picker(
+                                ui,
+                                &mut hsv,
+                                &mut hexf,
+                                &mut self.custom,
+                                &cur,
+                                width,
+                            ) {
                                 apply = Some(v);
                             }
                             if let Some(p) = self.picker.as_mut() {
@@ -332,9 +359,10 @@ impl App {
 
         // клик мимо поповера закрывает его
         let clicked_outside = ctx.input(|i| i.pointer.any_click())
-            && !area.response.rect.contains(
-                ctx.pointer_interact_pos().unwrap_or(egui::Pos2::ZERO),
-            );
+            && !area
+                .response
+                .rect
+                .contains(ctx.pointer_interact_pos().unwrap_or(egui::Pos2::ZERO));
         if clicked_outside || ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
             close = true;
         }
@@ -362,7 +390,9 @@ impl App {
     /// Своё значение: нормализуем, проверяем, при спорном предупреждаем,
     /// но по второму нажатию ставим как есть.
     fn submit_free(&mut self, kind: Kind, target: Option<usize>) {
-        let Some(p) = self.picker.as_mut() else { return };
+        let Some(p) = self.picker.as_mut() else {
+            return;
+        };
         let raw = p.input.clone();
         let Some(v) = tokens::normalize(kind, &raw) else {
             p.warn = Some("Введи значение.");
@@ -402,7 +432,11 @@ impl App {
             job.append(
                 &s,
                 0.0,
-                egui::TextFormat { font_id: font::code(), color: col, ..Default::default() },
+                egui::TextFormat {
+                    font_id: font::code(),
+                    color: col,
+                    ..Default::default()
+                },
             );
         }
         job.wrap.max_width = ui.available_width();
@@ -421,15 +455,23 @@ impl eframe::App for App {
             self.player.start(&self.doc, now);
         }
         let spoken = self.player.step(now);
-        let _ = spoken; // озвучка подключается следующим шагом
+        if spoken > 0 {
+            self.audio.tick(&self.player.last_voice, spoken);
+        }
+        for name in std::mem::take(&mut self.player.pending_sfx) {
+            self.audio.event(&name);
+        }
         if self.player.animating() {
             ctx.request_repaint();
         }
 
         let bg = |t: i8, b: i8| {
-            Frame::new()
-                .fill(theme::BG)
-                .inner_margin(Margin { left: 22, right: 22, top: t, bottom: b })
+            Frame::new().fill(theme::BG).inner_margin(Margin {
+                left: 22,
+                right: 22,
+                top: t,
+                bottom: b,
+            })
         };
 
         egui::Panel::top("head")
@@ -459,39 +501,38 @@ impl eframe::App for App {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
-                ui::panel(ui, "Вывод", None, Some("02"), |ui| {
-                    ui.set_min_height(52.0);
-                    self.output(ui);
-                });
-                ui.add_space(16.0);
-                let status = self.player.status();
-                ui::panel(ui, "Превью", Some(status), Some("03"), |ui| {
-                    // Высота стенда — остаток панели за вычетом кнопок и полей;
-                    // ниже минимума включается прокрутка, а не обрезка.
-                    let h = (ui.available_height() - 74.0).max(120.0);
-                    if player::stage(ui, &self.player, h) {
-                        self.player.advance(now);
-                    }
-                    ui.add_space(14.0);
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 8.0;
-                        let running = self.player.is_running();
-                        let label = if running { "Стоп" } else { "Играть" };
-                        if ui::icon_button(ui, label, running).clicked() {
-                            if running {
-                                self.player.reset();
-                            } else {
-                                self.player.start(&self.doc, now);
+                        ui::panel(ui, "Вывод", None, Some("02"), |ui| {
+                            ui.set_min_height(52.0);
+                            self.output(ui);
+                        });
+                        ui.add_space(16.0);
+                        let status = self.player.status();
+                        ui::panel(ui, "Превью", Some(status), Some("03"), |ui| {
+                            // Высота стенда — остаток панели за вычетом кнопок и полей;
+                            // ниже минимума включается прокрутка, а не обрезка.
+                            let h = (ui.available_height() - 74.0).max(120.0);
+                            if player::stage(ui, &self.player, h) {
+                                self.player.advance(now);
                             }
-                        }
-                        if ui::light_button(ui, "Сброс").clicked() {
-                            self.player.reset();
-                        }
-                    });
-                });
+                            ui.add_space(14.0);
+                            ui.horizontal(|ui| {
+                                ui.spacing_mut().item_spacing.x = 8.0;
+                                let running = self.player.is_running();
+                                let label = if running { "Стоп" } else { "Играть" };
+                                if ui::icon_button(ui, label, running).clicked() {
+                                    if running {
+                                        self.player.reset();
+                                    } else {
+                                        self.player.start(&self.doc, now);
+                                    }
+                                }
+                                if ui::light_button(ui, "Сброс").clicked() {
+                                    self.player.reset();
+                                }
+                            });
+                        });
                     });
             });
-
 
         egui::CentralPanel::default()
             .frame(bg(2, 0))
