@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Dialoging — Icon Set</title>
+<style>
+  :root{
+    --bg:#EFEDEA;
+    --card:#F7F6F4;
+    --ink:#0A0A0A;
+    --ink-2:#6B6864;
+    --ink-3:#9C9894;
+    --line:#DAD6D1;
+    --accent:#16A34A;
+    --accent-ink:#0E7A37;
+    --sans:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:56px 60px 64px}
+  .sheet{max-width:1360px;margin:0 auto}
+
+  /* ---------- header ---------- */
+  .top{display:flex;justify-content:space-between;align-items:baseline;
+       padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+           text-transform:uppercase;color:var(--ink-2)}
+  .masthead{display:flex;justify-content:space-between;align-items:flex-end;margin:34px 0 8px}
+  h1{font-size:54px;line-height:.95;letter-spacing:-.035em;font-weight:500}
+  h1 em{font-style:normal;color:var(--ink-3)}
+  .count{font-size:64px;line-height:.85;letter-spacing:-.04em;font-weight:500}
+  .sub{display:flex;gap:26px;align-items:center;margin-top:18px;padding-bottom:26px;
+       border-bottom:1px solid var(--line)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+       box-shadow:0 0 0 4px rgba(22,163,74,.14)}
+  .sub p{font-size:13.5px;color:var(--ink-2);max-width:560px;line-height:1.5}
+
+  /* ---------- column titles ---------- */
+  .colhead{display:grid;grid-template-columns:186px 1fr 1fr;gap:0;margin-top:30px;
+           padding-bottom:10px;border-bottom:1px solid var(--line);align-items:baseline}
+  .colhead .v{display:flex;align-items:baseline;gap:9px;padding-left:22px}
+  .vnum{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em}
+  .vname{font-size:15px;letter-spacing:-.01em;font-weight:500}
+  .vnote{font-size:11.5px;color:var(--ink-3)}
+
+  /* ---------- groups ---------- */
+  .group{display:grid;grid-template-columns:186px 1fr 1fr;
+         border-bottom:1px solid var(--line)}
+  .gmeta{padding:26px 22px 26px 0}
+  .gname{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+         text-transform:uppercase;color:var(--ink);margin-bottom:6px}
+  .gdesc{font-size:11.5px;color:var(--ink-3);line-height:1.45}
+  .cells{display:flex;flex-wrap:wrap;gap:12px;padding:26px 22px}
+  .cells.alt{background:rgba(0,0,0,.018)}
+
+  /* ---------- icon cell ---------- */
+  .cell{width:112px}
+  .tile{height:76px;border-radius:12px;background:var(--card);
+        display:flex;align-items:center;justify-content:center;
+        border:1px solid rgba(0,0,0,.045);
+        box-shadow:0 1px 1.5px rgba(38,32,26,.05),
+                   0 6px 14px -6px rgba(38,32,26,.16);}
+  .tile svg{width:26px;height:26px;display:block}
+  .cap{margin-top:9px;font-size:11.5px;line-height:1.25;letter-spacing:-.005em}
+  .code{margin-top:3px;font-family:var(--mono);font-size:10px;color:var(--ink-3);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* outline vs solid rendering */
+  .outline svg{fill:none;stroke:var(--ink);stroke-width:1.6;
+               stroke-linecap:round;stroke-linejoin:round}
+  .outline svg .fillmark{fill:var(--ink);stroke:none}
+  .solid   svg{fill:var(--ink);stroke:none}
+  .solid   svg .strokemark{fill:none;stroke:var(--ink);stroke-width:2.4;
+                           stroke-linecap:round;stroke-linejoin:round}
+
+  /* palette strip */
+  .palette{display:flex;gap:7px;align-items:center;margin-top:11px}
+  .sw{width:15px;height:15px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
+
+  /* ---------- chip preview ---------- */
+  .preview{margin-top:44px}
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}
+  .pcard{background:var(--card);border-radius:16px;padding:26px 28px 28px;
+         border:1px solid rgba(0,0,0,.045);
+         box-shadow:0 1px 2px rgba(38,32,26,.05),
+                    0 14px 30px -14px rgba(38,32,26,.22)}
+  .pcard .eyebrow{margin-bottom:16px;display:flex;justify-content:space-between}
+  .line{font-size:19px;line-height:2.15;letter-spacing:-.012em}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;vertical-align:-3px;
+        padding:3px 8px 3px 6px;border-radius:8px;margin:0 2px;
+        background:#fff;border:1px solid rgba(0,0,0,.07);
+        box-shadow:0 1px 1px rgba(38,32,26,.05),0 3px 8px -3px rgba(38,32,26,.2);
+        font-family:var(--mono);font-size:11.5px;letter-spacing:0;line-height:1}
+  .chip svg{width:14px;height:14px;fill:none;stroke:var(--ink);stroke-width:1.8;
+            stroke-linecap:round;stroke-linejoin:round;display:block}
+  .chip svg .fillmark{fill:var(--ink);stroke:none}
+  .chip.on{background:var(--accent);border-color:transparent;color:#fff}
+  .chip.on svg{stroke:#fff}
+  .chip.on svg .fillmark{fill:#fff}
+  .chip .val{color:var(--ink-2)}
+  .chip.on .val{color:rgba(255,255,255,.82)}
+  .chip.swatchchip .sw{width:11px;height:11px}
+
+  .out{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);
+       font-family:var(--mono);font-size:13.5px;line-height:1.75;color:var(--ink);
+       word-break:break-word}
+  .out .cmd{color:var(--accent-ink)}
+  .foot{margin-top:38px;display:flex;justify-content:space-between;
+        border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="top">
+    <span class="eyebrow">Dialoging — Icon set</span>
+    <span class="eyebrow">Draft 01</span>
+  </div>
+
+  <div class="masthead">
+    <h1>Токены<br><em>разметки</em></h1>
+    <div class="count">17</div>
+  </div>
+
+  <div class="sub">
+    <span class="dot"></span>
+    <p>Два варианта отрисовки одного набора. Единая сетка 24×24, одинаковый штрих,
+       общий язык форм. Выбери колонку — по ней соберу весь интерфейс.</p>
+  </div>
+
+  <div class="colhead">
+    <span class="eyebrow">Группа</span>
+    <div class="v"><span class="vnum">A</span><span class="vname">Контур</span>
+      <span class="vnote">— тоньше, ближе к рефам</span></div>
+    <div class="v"><span class="vnum">B</span><span class="vname">Плотный</span>
+      <span class="vnote">— читается мельче, живее в строке</span></div>
+  </div>
+
+  <div id="groups"></div>
+
+  <!-- chip preview -->
+  <div class="preview">
+    <div class="top" style="border:0;padding-bottom:6px">
+      <span class="eyebrow">Чип в строке — Иконка + значение</span>
+      <span class="eyebrow">02</span>
+    </div>
+    <div class="pgrid">
+      <div class="pcard">
+        <div class="eyebrow"><span>Вариант A — контур</span><span>A</span></div>
+        <div class="line" id="lineA"></div>
+        <div class="out" id="outA"></div>
+      </div>
+      <div class="pcard">
+        <div class="eyebrow"><span>Вариант B — плотный</span><span>B</span></div>
+        <div class="line" id="lineB"></div>
+        <div class="out" id="outB"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="eyebrow">6 групп · 17 токенов</span>
+    <span class="eyebrow">24 × 24 · stroke 1.6</span>
+  </div>
+</div>
+
+<script>
+/* ---------------- icon geometry (24×24) ----------------
+   Каждая иконка описана дважды: контурная и плотная версия.        */
+const I = {
+  pause:{
+    o:`<path d="M9.2 4.9v14.2M14.8 4.9v14.2"/>`,
+    s:`<rect x="7" y="4.4" width="3.8" height="15.2" rx="1.3"/>
+       <rect x="13.2" y="4.4" width="3.8" height="15.2" rx="1.3"/>`},
+  clock:{
+    o:`<circle cx="12" cy="12" r="8.2"/><path d="M12 7.1V12.3l3.3 2"/>`,
+    s:`<path fill-rule="evenodd" d="M12 3.2a8.8 8.8 0 100 17.6 8.8 8.8 0 000-17.6zm0 2.5a6.3 6.3 0 110 12.6 6.3 6.3 0 010-12.6z"/>
+       <path class="strokemark" d="M12 8.2v4.2l2.5 1.5"/>`},
+  speed:{
+    o:`<path d="M4.6 6.6L11 12l-6.4 5.4"/><path d="M12.8 6.6L19.2 12l-6.4 5.4"/>`,
+    s:`<path class="strokemark" d="M4.6 6.6L11 12l-6.4 5.4M12.8 6.6L19.2 12l-6.4 5.4"/>`},
+  bolt:{
+    o:`<path d="M13.3 3.2L6.4 13.6h4.6L10.3 20.8l7.3-10.9h-4.8z"/>`,
+    s:`<path d="M13.6 2.6L5.9 14.2h5.1l-.9 7.4 7.9-11.8h-5z"/>`},
+  newline:{
+    o:`<path d="M20 5.2v5.1a3.4 3.4 0 01-3.4 3.4H4.9"/>
+       <path d="M8.7 9.6L4.4 13.7l4.3 4.1"/>`,
+    s:`<path d="M18.4 4.4h3.2v6.5a4.7 4.7 0 01-4.7 4.7H6.6v-3.2h10.3a1.5 1.5 0 001.5-1.5z"/>
+       <path d="M9.6 8.5l2.2 2.3-5 4.8 5 4.8-2.2 2.3-7.4-7.1z"/>`},
+  advance:{
+    o:`<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.6"/>
+       <path class="fillmark" d="M8.8 10.4h6.4L12 15.4z"/>`,
+    s:`<path d="M5.8 3.6h12.4a2.6 2.6 0 012.6 2.6v11.6a2.6 2.6 0 01-2.6 2.6H5.8a2.6 2.6 0 01-2.6-2.6V6.2a2.6 2.6 0 012.6-2.6zm3 6.8l3.2 5 3.2-5z" fill-rule="evenodd"/>`},
+  close:{
+    o:`<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.6"/>
+       <path d="M9.4 9.6l5.2 4.8M14.6 9.6l-5.2 4.8"/>`,
+    s:`<path fill-rule="evenodd" d="M3.2 6.6a2.6 2.6 0 012.6-2.6h12.4a2.6 2.6 0 012.6 2.6v10.8a2.6 2.6 0 01-2.6 2.6H5.8a2.6 2.6 0 01-2.6-2.6zM5.9 6.7v10.6h12.2V6.7z"/>
+       <path class="strokemark" d="M9.4 9.6l5.2 4.8M14.6 9.6l-5.2 4.8"/>`},
+  color:{
+    o:`<circle cx="12" cy="12" r="8.2"/>
+       <path class="fillmark" d="M12 3.8a8.2 8.2 0 010 16.4z"/>`,
+    s:`<path fill-rule="evenodd" d="M12 3.2a8.8 8.8 0 100 17.6 8.8 8.8 0 000-17.6zm0 2.4a6.4 6.4 0 110 12.8 6.4 6.4 0 010-12.8z"/>
+       <path d="M12 6.8a5.2 5.2 0 010 10.4z"/>`},
+  reset:{
+    o:`<path d="M4.4 11.4a7.8 7.8 0 102.5-5.3"/>
+       <path d="M3.4 4.6l.3 5.1 5.1-.4"/>`,
+    s:`<path d="M12 4a8 8 0 108 8h-3.1A4.9 4.9 0 1112 7.1c1.2 0 2.3.4 3.2 1.1l-2.6 2.5h7.2V3.5l-2.4 2.3A7.9 7.9 0 0012 4z"/>`},
+  voice:{
+    o:`<circle class="fillmark" cx="7.4" cy="12" r="2.3"/>
+       <path d="M12.4 8.4a5.4 5.4 0 010 7.2"/>
+       <path d="M15.9 5.4a10 10 0 010 13.2"/>`,
+    s:`<circle cx="7.2" cy="12" r="2.9"/>
+       <path class="strokemark" d="M12.4 8.2a5.6 5.6 0 010 7.6M16.1 5.1a10.4 10.4 0 010 13.8"/>`},
+  face:{
+    o:`<circle cx="12" cy="12" r="8.2"/>
+       <circle class="fillmark" cx="9.4" cy="10.3" r="1.05"/>
+       <circle class="fillmark" cx="14.6" cy="10.3" r="1.05"/>
+       <path d="M9 14.3q3 2.7 6 0"/>`,
+    s:`<path d="M12 3.2a8.8 8.8 0 100 17.6 8.8 8.8 0 000-17.6zM9.4 9a1.4 1.4 0 110 2.8 1.4 1.4 0 010-2.8zm5.2 0a1.4 1.4 0 110 2.8 1.4 1.4 0 010-2.8zM8.5 13.9h7a3.7 3.7 0 01-7 0z" fill-rule="evenodd"/>`},
+  shake:{
+    o:`<rect x="7.4" y="5.8" width="9.2" height="12.4" rx="2.2"/>
+       <path d="M4.3 9.4v5.2M1.9 10.9v2.2M19.7 9.4v5.2M22.1 10.9v2.2"/>`,
+    s:`<rect x="7" y="5.4" width="10" height="13.2" rx="2.6"/>
+       <path class="strokemark" d="M4.2 9.2v5.6M1.7 10.8v2.4M19.8 9.2v5.6M22.3 10.8v2.4"/>`},
+  jitter:{
+    o:`<rect x="2.8" y="12.4" width="5.6" height="5.6" rx="1.4"/>
+       <rect x="9.2" y="6.4" width="5.6" height="5.6" rx="1.4"/>
+       <rect x="15.6" y="11.2" width="5.6" height="5.6" rx="1.4"/>
+       <path d="M4.6 10.4l1-1.2M11.4 14.4l1 1.2M17.6 9.2l1-1.2"/>`,
+    s:`<rect x="2.6" y="12.2" width="6" height="6" rx="1.6"/>
+       <rect x="9" y="6.1" width="6" height="6" rx="1.6"/>
+       <rect x="15.4" y="11" width="6" height="6" rx="1.6"/>
+       <path class="strokemark" d="M4.6 10.2l1-1.2M11.4 14.6l1 1.2M17.6 9l1-1.2"/>`},
+  wave:{
+    o:`<path d="M2.4 12.6q3.2-5.6 6.4 0t6.4 0 6.4 0"/>`,
+    s:`<path class="strokemark" d="M2.2 13q3.3-6 6.6 0t6.6 0 6.6 0" stroke-width="3"/>`},
+  wobble:{
+    o:`<g transform="rotate(-21 5.3 12)"><rect x="3.6" y="8" width="3.4" height="8" rx="1.1"/></g>
+       <g transform="rotate(21 12 12)"><rect x="10.3" y="8" width="3.4" height="8" rx="1.1"/></g>
+       <g transform="rotate(-21 18.7 12)"><rect x="17" y="8" width="3.4" height="8" rx="1.1"/></g>`,
+    s:`<g transform="rotate(-21 5.3 12)"><rect x="3.5" y="7.8" width="3.6" height="8.4" rx="1.2"/></g>
+       <g transform="rotate(21 12 12)"><rect x="10.2" y="7.8" width="3.6" height="8.4" rx="1.2"/></g>
+       <g transform="rotate(-21 18.7 12)"><rect x="16.9" y="7.8" width="3.6" height="8.4" rx="1.2"/></g>`},
+  glitch:{
+    o:`<rect x="5.4" y="5.4" width="14" height="3.6" rx="1"/>
+       <rect x="8.2" y="10.2" width="13" height="3.6" rx="1"/>
+       <rect x="3" y="15" width="13" height="3.6" rx="1"/>`,
+    s:`<rect x="5.2" y="5" width="14.4" height="4" rx="1.2"/>
+       <rect x="8" y="10" width="13.4" height="4" rx="1.2"/>
+       <rect x="2.6" y="15" width="13.4" height="4" rx="1.2"/>`},
+  sound:{
+    o:`<path d="M3.6 9.6h3.5L11.6 5.9v12.2L7.1 14.4H3.6z"/>
+       <path d="M15.1 9.4a3.9 3.9 0 010 5.2"/>
+       <path d="M18.2 6.6a8.2 8.2 0 010 10.8"/>`,
+    s:`<path d="M3.4 9.2h3.6l4.8-4v13.6l-4.8-4H3.4z"/>
+       <path class="strokemark" d="M15.2 9.2a4.1 4.1 0 010 5.6M18.4 6.4a8.6 8.6 0 010 11.2"/>`},
+};
+
+const GROUPS = [
+  {name:"Тайминг", desc:"Когда и как быстро появляются символы", items:[
+    {k:"pause",   t:"Пауза",         c:"^2"},
+    {k:"clock",   t:"Пауза точная",  c:"{p:250}"},
+    {k:"speed",   t:"Скорость",      c:"{s:2}"},
+    {k:"bolt",    t:"Мгновенно",     c:"{instant}"},
+  ]},
+  {name:"Поток", desc:"Строки, страницы, конец реплики", items:[
+    {k:"newline", t:"Перенос строки",c:"&"},
+    {k:"advance", t:"Ждать нажатия", c:"/"},
+    {k:"close",   t:"Закрыть бокс",  c:"%"},
+  ]},
+  {name:"Стиль", desc:"Внешний вид текста с этой точки", items:[
+    {k:"color",   t:"Цвет",          c:"\\R \\G \\B …", palette:true},
+    {k:"reset",   t:"Сброс стиля",   c:"\\X"},
+  ]},
+  {name:"Персонаж", desc:"Кто говорит и с каким лицом", items:[
+    {k:"voice",   t:"Голос",         c:"\\TS"},
+    {k:"face",    t:"Выражение",     c:"\\E1"},
+  ]},
+  {name:"Движение", desc:"Пять разных характеров дрожания", items:[
+    {k:"shake",   t:"Тряска блока",  c:"{shake:2}"},
+    {k:"jitter",  t:"Дрожь букв",    c:"{jitter:2}"},
+    {k:"wave",    t:"Волна",         c:"{wave:2}"},
+    {k:"wobble",  t:"Качание",       c:"{wobble:2}"},
+    {k:"glitch",  t:"Глитч",         c:"{glitch:2}"},
+  ]},
+  {name:"Звук", desc:"Событие в конкретной точке строки", items:[
+    {k:"sound",   t:"Звук",          c:"{snd:hit}"},
+  ]},
+];
+
+const PAL = ["#D64541","#16A34A","#2563EB","#E0B32B","#8B5CF6","#E86C1A","#0A0A0A"];
+
+const svg = (k,v) => `<svg viewBox="0 0 24 24">${I[k][v]}</svg>`;
+
+document.getElementById("groups").innerHTML = GROUPS.map(g=>{
+  const cells = v => g.items.map(it=>`
+    <div class="cell">
+      <div class="tile">${svg(it.k,v)}</div>
+      <div class="cap">${it.t}</div>
+      <div class="code">${it.c}</div>
+      ${it.palette?`<div class="palette">${PAL.map(c=>
+        `<span class="sw" style="background:${c}"></span>`).join("")}</div>`:""}
+    </div>`).join("");
+  return `<div class="group">
+      <div class="gmeta"><div class="gname">${g.name}</div>
+        <div class="gdesc">${g.desc}</div></div>
+      <div class="cells outline">${cells("o")}</div>
+      <div class="cells solid alt">${cells("s")}</div>
+    </div>`;
+}).join("");
+
+/* ---------- inline chip preview ---------- */
+const chip = (k,val,v,on,sw) => `<span class="chip${on?" on":""}${sw?" swatchchip":""}">
+    ${sw?`<span class="sw" style="background:${sw}"></span>`:svg(k,v)}
+    ${val?`<span class="val">${val}</span>`:""}</span>`;
+
+const buildLine = v => `Привет${chip("pause","2",v)} как дела?${chip("newline","",v)}`
+  + `Я ${chip("color","",v,false,"#D64541")}очень${chip("reset","",v)} рад `
+  + `${chip("shake","2",v,true)}тебя видеть${chip("advance","",v)}`;
+
+const OUT = `Привет<span class="cmd">^2</span> как дела?<span class="cmd">&amp;</span>`
+  + `Я <span class="cmd">\\R</span>очень<span class="cmd">\\X</span> рад `
+  + `<span class="cmd">{shake:2}</span>тебя видеть<span class="cmd">{/shake}</span>`
+  + `<span class="cmd">/</span>`;
+
+lineA.innerHTML = buildLine("o"); outA.innerHTML = OUT;
+lineB.innerHTML = buildLine("s"); outB.innerHTML = OUT;
+</script>
+</body>
+</html>
