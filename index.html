@@ -217,6 +217,24 @@ h1 em{font-style:normal;color:var(--ink-3)}
 .opt svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;
          stroke-linecap:round;stroke-linejoin:round}
 .opt svg .fillmark{fill:currentColor;stroke:none}
+.freerow{display:flex;gap:6px;margin-top:9px;max-width:236px}
+.finput{flex:1;min-width:0;height:34px;padding:0 10px;border-radius:9px;
+        border:1px solid var(--line-2);background:var(--card);
+        font:inherit;font-size:13px;color:var(--ink);outline:none;
+        transition:border-color .14s var(--ease),box-shadow .14s var(--ease),
+                   background .14s var(--ease)}
+.finput::placeholder{color:var(--ink-4)}
+.finput:focus{background:var(--white);border-color:var(--accent);
+              box-shadow:0 0 0 3px var(--accent-soft)}
+.fapply{flex:none;height:34px;padding:0 13px;border-radius:9px;
+        background:var(--ink);color:#fff;font-size:12.5px;
+        transition:transform .14s var(--ease)}
+.fapply:active{transform:scale(.96)}
+.fhint{margin-top:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+       text-transform:uppercase;color:var(--ink-3)}
+.pwarn{margin-top:8px;max-width:236px;font-size:11.5px;line-height:1.4;
+       color:#B4552F;display:none}
+.pwarn.on{display:block}
 .prow{display:flex;justify-content:flex-end;gap:6px;margin-top:10px;
       padding-top:10px;border-top:1px solid var(--line-2)}
 .pdel{font-size:12px;color:#C0392B;padding:0 9px;height:30px;border-radius:8px;
@@ -382,14 +400,35 @@ const VOICES = {
   W:{n:"Шёпот",   w:"triangle", f:240, d:.018},
 };
 const AMP = [1,2,3];
+const isHex = v => /^#[0-9a-fA-F]{6}$/.test(String(v));
+const FREE_AMP = {kind:"num", hint:"сила эффекта", ok:v=>Number(v)>=0,
+                  warn:"Сила не может быть отрицательной."};
+/* нормализуем ввод: запятая как разделитель, лишние пробелы прочь */
+function normVal(spec, raw){
+  let v = String(raw).trim();
+  if(spec.free && spec.free.kind === "num"){
+    v = v.replace(",", ".").replace(/\s+/g, "");
+    if(v === "" || isNaN(Number(v))) return null;
+    v = String(Number(v));               // 0.250 -> 0.25, 2. -> 2
+  }
+  return v === "" ? null : v;
+}
 
 const T = {
   pause:  {g:"Тайминг", n:"Пауза",        icon:"pause",  def:2,
-           opts:[1,2,3,4,5,6,7,8,9], code:v=>"^"+v},
+           opts:[1,2,3,4,5,6,7,8,9], code:v=>"^"+v,
+           free:{kind:"num", hint:"кадров",
+                 ok:v=>/^[0-9]$/.test(v),
+                 warn:"Undertale читает после ^ ровно одну цифру 0–9. "+
+                      "Для длинных пауз бери «Пауза мс»."}},
   clock:  {g:"Тайминг", n:"Пауза мс",     icon:"clock",  def:250,
-           opts:[100,250,500,1000,2000], code:v=>"{p:"+v+"}"},
+           opts:[100,250,500,1000,2000], code:v=>"{p:"+v+"}",
+           free:{kind:"num", hint:"миллисекунд", ok:v=>Number(v)>=0,
+                 warn:"Пауза не может быть отрицательной."}},
   speed:  {g:"Тайминг", n:"Скорость",     icon:"speed",  def:2,
-           opts:[1,2,3,4,5], code:v=>"{s:"+v+"}"},
+           opts:[0.25,0.5,1,2,3,5], code:v=>"{s:"+v+"}",
+           free:{kind:"num", hint:"× от обычной", ok:v=>Number(v)>0,
+                 warn:"Скорость должна быть больше нуля."}},
   bolt:   {g:"Тайминг", n:"Мгновенно",    icon:"bolt",   code:()=>"{instant}"},
 
   newline:{g:"Поток",   n:"Строка",       icon:"newline",code:()=>"&"},
@@ -397,34 +436,44 @@ const T = {
   close:  {g:"Поток",   n:"Закрыть",      icon:"close",  code:()=>"%"},
 
   color:  {g:"Стиль",   n:"Цвет",         icon:"color",  def:"R", pick:"color",
-           opts:Object.keys(COLORS), code:v=>"\\"+v},
+           opts:Object.keys(COLORS),
+           code:v=>isHex(v) ? "{c:"+v+"}" : "\\"+v,
+           free:{kind:"text", hint:"#RRGGBB или буква",
+                 ok:v=>isHex(v)||!!COLORS[v],
+                 warn:"Нужен hex вида #E4483C или буква из палитры."}},
   reset:  {g:"Стиль",   n:"Сброс",        icon:"reset",  code:()=>"\\X"},
 
   voice:  {g:"Персонаж",n:"Голос",        icon:"voice",  def:"S", pick:"voice",
-           opts:Object.keys(VOICES), code:v=>"\\T"+v},
+           opts:Object.keys(VOICES), code:v=>"\\T"+v,
+           free:{kind:"text", hint:"код персонажа", ok:v=>/^\w{1,4}$/.test(v),
+                 warn:"Код голоса — от одного до четырёх символов без пробелов."}},
   face:   {g:"Персонаж",n:"Лицо",         icon:"face",   def:1, pick:"face",
-           opts:[1,2,3,4,5,6], code:v=>"\\E"+v},
+           opts:[1,2,3,4,5,6], code:v=>"\\E"+v,
+           free:{kind:"text", hint:"номер портрета", ok:v=>/^\w{1,4}$/.test(v),
+                 warn:"Номер портрета — от одного до четырёх символов без пробелов."}},
 
   shake:  {g:"Движение",n:"Тряска",       icon:"shake",  def:2, wrap:1, opts:AMP,
-           code:v=>"{shake:"+v+"}", end:()=>"{/shake}"},
+           code:v=>"{shake:"+v+"}", end:()=>"{/shake}", free:FREE_AMP},
   jitter: {g:"Движение",n:"Дрожь букв",   icon:"jitter", def:2, wrap:1, opts:AMP,
-           code:v=>"{jitter:"+v+"}", end:()=>"{/jitter}"},
+           code:v=>"{jitter:"+v+"}", end:()=>"{/jitter}", free:FREE_AMP},
   wave:   {g:"Движение",n:"Волна",        icon:"wave",   def:2, wrap:1, opts:AMP,
-           code:v=>"{wave:"+v+"}", end:()=>"{/wave}"},
+           code:v=>"{wave:"+v+"}", end:()=>"{/wave}", free:FREE_AMP},
   wobble: {g:"Движение",n:"Качание",      icon:"wobble", def:2, wrap:1, opts:AMP,
-           code:v=>"{wobble:"+v+"}", end:()=>"{/wobble}"},
+           code:v=>"{wobble:"+v+"}", end:()=>"{/wobble}", free:FREE_AMP},
   glitch: {g:"Движение",n:"Глитч",        icon:"glitch", def:2, wrap:1, opts:AMP,
-           code:v=>"{glitch:"+v+"}", end:()=>"{/glitch}"},
+           code:v=>"{glitch:"+v+"}", end:()=>"{/glitch}", free:FREE_AMP},
 
   sound:  {g:"Звук",    n:"Звук",         icon:"sound",  def:"hit", pick:"snd",
-           opts:["hit","ping","thud","coin"], code:v=>"{snd:"+v+"}"},
+           opts:["hit","ping","thud","coin"], code:v=>"{snd:"+v+"}",
+           free:{kind:"text", hint:"имя звука", ok:v=>/^[\w.-]{1,24}$/.test(v),
+                 warn:"Имя звука — буквы, цифры, точка и дефис."}},
 };
 const GROUPS = ["Тайминг","Поток","Стиль","Персонаж","Движение","Звук"];
 
 /* подпись значения внутри чипа */
 function chipVal(k,v){
   if(k==="color") return "";                       // показываем кружком
-  if(k==="voice") return VOICES[v].n;
+  if(k==="voice") return VOICES[v] ? VOICES[v].n : v;
   if(k==="face")  return v;
   if(k==="clock") return v;
   if(k==="sound") return v;
@@ -438,6 +487,7 @@ function chipVal(k,v){
 const ed = document.getElementById("editor");
 const ZW = "​";
 
+const colorOf = v => isHex(v) ? v : (COLORS[v] ? COLORS[v].c : "#0A0A0A");
 function makeChip(k,v,role){
   const s = document.createElement("span");
   s.className = "chip"; s.contentEditable = "false";
@@ -450,7 +500,7 @@ function renderChip(s){
   let inner = svg(T[k].icon);
   if(!close){
     if(k === "color")
-      inner += `<i class="dot" style="background:${COLORS[v].c}"></i>`;
+      inner += `<i class="dot" style="background:${colorOf(v)}"></i>`;
     const lbl = chipVal(k,v);
     if(lbl !== "") inner += `<i class="val">${lbl}</i>`;
   }
@@ -624,8 +674,8 @@ const pop = document.getElementById("pop");
 let popChip = null;
 
 function optLabel(k,v){
-  if(k === "color") return `<i class="dot" style="background:${COLORS[v].c}"></i>
-                            <span>${COLORS[v].n}</span>`;
+  if(k === "color") return `<i class="dot" style="background:${colorOf(v)}"></i>
+                            <span>${COLORS[v] ? COLORS[v].n : v}</span>`;
   if(k === "voice") return `<span>${VOICES[v].n}</span>`;
   if(k === "face")  return svg("face") + `<span>${v}</span>`;
   if(k === "sound") return `<span>${v}</span>`;
@@ -646,6 +696,15 @@ function openPop(chip, k, anchor){
       `<button class="opt${String(v)===String(cur)?" on":""}" data-v="${v}">
         ${optLabel(key,v)}</button>`).join("") + `</div>`;
   }
+  if(spec.free){
+    html += `<div class="freerow">
+      <input class="finput" id="freeIn" value="${cur == null ? "" : String(cur)}"
+             placeholder="своё значение" autocomplete="off" spellcheck="false"
+             ${spec.free.kind === "num" ? 'inputmode="decimal"' : ''}>
+      <button class="fapply">OK</button></div>
+      <div class="fhint">${spec.free.hint}</div>
+      <div class="pwarn" id="freeWarn"></div>`;
+  }
   if(chip) html += `<div class="prow"><button class="pdel" data-del="1">Удалить</button></div>`;
   pop.innerHTML = html;
   pop.classList.add("on");
@@ -659,7 +718,35 @@ function openPop(chip, k, anchor){
 }
 function closePop(){ pop.classList.remove("on"); popChip = null; }
 
-pop.addEventListener("mousedown", e => e.preventDefault());
+pop.addEventListener("mousedown", e=>{
+  if(!e.target.closest(".finput")) e.preventDefault();
+});
+function applyValue(key, v){
+  if(popChip){
+    popChip.dataset.v = v; renderChip(popChip);
+    if(T[key].wrap){ const p = pairOf(popChip); if(p){ p.dataset.v = v; renderChip(p); } }
+    closePop(); sync();
+  }else{
+    closePop(); insertToken(key, v);
+  }
+}
+/* своё значение: нормализуем, проверяем, при спорном — предупреждаем, но пропускаем */
+function submitFree(){
+  const key = pop.dataset.k, spec = T[key];
+  const input = pop.querySelector("#freeIn"), warn = pop.querySelector("#freeWarn");
+  if(!input) return;
+  const v = normVal(spec, input.value);
+  if(v === null){
+    warn.textContent = "Введи значение."; warn.classList.add("on");
+    input.focus(); return;
+  }
+  if(spec.free.ok && !spec.free.ok(v)){
+    if(warn.classList.contains("on")){ applyValue(key, v); return; }  // второе нажатие — всё равно ставим
+    warn.textContent = spec.free.warn + " Нажми OK ещё раз, чтобы поставить как есть.";
+    warn.classList.add("on"); input.focus(); return;
+  }
+  applyValue(key, v);
+}
 pop.addEventListener("click", e=>{
   const del = e.target.closest("[data-del]");
   if(del && popChip){
@@ -668,15 +755,17 @@ pop.addEventListener("click", e=>{
     else popChip.remove();
     closePop(); sync(); return;
   }
+  if(e.target.closest(".fapply")){ submitFree(); return; }
   const o = e.target.closest(".opt"); if(!o) return;
-  const v = o.dataset.v, key = pop.dataset.k;
-  if(popChip){
-    popChip.dataset.v = v; renderChip(popChip);
-    if(T[key].wrap){ const p = pairOf(popChip); if(p) p.dataset.v = v; }
-    closePop(); sync();
-  }else{
-    closePop(); insertToken(key, v);
-  }
+  applyValue(pop.dataset.k, o.dataset.v);
+});
+pop.addEventListener("keydown", e=>{
+  if(!e.target.closest(".finput")) return;
+  if(e.key === "Enter"){ e.preventDefault(); submitFree(); }
+  if(e.key === "Escape"){ e.preventDefault(); closePop(); }
+});
+pop.addEventListener("input", e=>{
+  if(e.target.closest(".finput")) pop.querySelector("#freeWarn").classList.remove("on");
 });
 function chipsOf(k){ return [...ed.querySelectorAll(`.chip[data-k="${k}"]`)]; }
 function pairOf(chip){
@@ -812,22 +901,27 @@ async function play(){
     const k = o.k, v = o.v;
     if(o.close && T[k].wrap){ st.fx = null; seg = null; continue; }
     switch(k){
-      case "pause":   await sleep(Number(v) * 1000/30); break;
-      case "clock":   await sleep(Number(v)); break;
-      case "speed":   st.speed = Number(v); break;
+      case "pause":   await sleep(Math.max(0, Number(v) || 0) * 1000/30); break;
+      case "clock":   await sleep(Math.max(0, Number(v) || 0)); break;
+      case "speed":   { const n = Number(v); if(n > 0) st.speed = n; } break;
       case "bolt":    st.instant = true; break;
       case "newline": screen.appendChild(document.createElement("br")); seg = null; segColor = null; break;
       case "advance": await waitClick(my); break;
       case "close":   await sleep(160); screen.innerHTML = ""; seg = null; segColor = null;
                       await sleep(160); break;
-      case "color":   st.color = COLORS[v].c; seg = null; segColor = null; break;
+      case "color":   st.color = colorOf(v); seg = null; segColor = null; break;
       case "reset":   st.color = "#fff"; st.speed = 1; st.instant = false;
                       st.fx = null; seg = null; segColor = null; break;
       case "voice":   st.voice = v; break;
       case "face":    portrait.classList.add("on");
-                      portrait.innerHTML = `<svg viewBox="0 0 24 24">${FACES[v]}</svg>`; break;
+                      portrait.innerHTML =
+                        `<svg viewBox="0 0 24 24">${FACES[v] || FACES[1]}</svg>`; break;
       case "sound":   sfx(v); break;
-      default:        if(T[k].wrap){ st.fx = k; st.amp = Number(v); seg = null; segColor = null; }
+      default:        if(T[k].wrap){
+                        const a = Number(v);
+                        st.fx = k; st.amp = isNaN(a) ? 2 : a;
+                        seg = null; segColor = null;
+                      }
     }
   }
   if(my !== gen) return;
