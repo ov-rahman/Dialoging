@@ -373,6 +373,139 @@ impl Doc {
         }
     }
 
+
+    // ------------------------------------------------------------ движение каретки
+
+    /// Приводит позицию к канонической форме (см. `clamp_caret`).
+    pub fn canon(&self, c: Caret) -> Caret {
+        let mut c = c;
+        if c.node > self.nodes.len() {
+            return self.end_caret();
+        }
+        if let Some(Node::Text(t)) = self.nodes.get(c.node) {
+            if c.offset > t.len() {
+                c.offset = t.len();
+            }
+            while c.offset < t.len() && !t.is_char_boundary(c.offset) {
+                c.offset += 1;
+            }
+        } else {
+            c.offset = 0;
+        }
+        if c.offset == 0 && c.node > 0 {
+            if let Some(Node::Text(prev)) = self.nodes.get(c.node - 1) {
+                return Caret { node: c.node - 1, offset: prev.len() };
+            }
+        }
+        c
+    }
+
+    pub fn caret_left(&self, c: Caret) -> Caret {
+        let c = self.canon(c);
+        if let Some(Node::Text(t)) = self.nodes.get(c.node) {
+            if c.offset > 0 {
+                let prev = t[..c.offset]
+                    .char_indices()
+                    .next_back()
+                    .map(|(i, _)| i)
+                    .unwrap_or(0);
+                return self.canon(Caret { node: c.node, offset: prev });
+            }
+        }
+        if c.node == 0 {
+            return Caret::default();
+        }
+        let target = c.node - 1;
+        if let Some(Node::Text(t)) = self.nodes.get(target) {
+            let prev = t.char_indices().next_back().map(|(i, _)| i).unwrap_or(0);
+            return self.canon(Caret { node: target, offset: prev });
+        }
+        self.canon(Caret { node: target, offset: 0 })
+    }
+
+    pub fn caret_right(&self, c: Caret) -> Caret {
+        let c = self.canon(c);
+        if let Some(Node::Text(t)) = self.nodes.get(c.node) {
+            if c.offset < t.len() {
+                let next = t[c.offset..]
+                    .char_indices()
+                    .nth(1)
+                    .map(|(i, _)| c.offset + i)
+                    .unwrap_or(t.len());
+                return self.canon(Caret { node: c.node, offset: next });
+            }
+        }
+        self.canon(Caret {
+            node: (c.node + 1).min(self.nodes.len()),
+            offset: 0,
+        })
+    }
+
+    pub fn start_caret(&self) -> Caret {
+        self.canon(Caret { node: 0, offset: 0 })
+    }
+
+    /// Линейный порядок двух позиций — нужен, чтобы нормализовать выделение.
+    fn key(c: Caret) -> (usize, usize) {
+        (c.node, c.offset)
+    }
+
+    pub fn ordered(a: Caret, b: Caret) -> (Caret, Caret) {
+        if Self::key(a) <= Self::key(b) {
+            (a, b)
+        } else {
+            (b, a)
+        }
+    }
+
+    // ------------------------------------------------------------ выделение
+
+    /// Удаляет всё между двумя позициями. Если внутри оказалась половина
+    /// парного токена, вторая снимется в `normalize`.
+    pub fn delete_range(&mut self, a: Caret, b: Caret) {
+        let (a, b) = Self::ordered(self.canon(a), self.canon(b));
+        if a == b {
+            return;
+        }
+        if a.node == b.node {
+            if let Some(Node::Text(t)) = self.nodes.get_mut(a.node) {
+                t.replace_range(a.offset..b.offset, "");
+                self.caret = a;
+                self.normalize();
+                return;
+            }
+        }
+        // хвост последнего узла
+        if let Some(Node::Text(t)) = self.nodes.get_mut(b.node) {
+            t.replace_range(..b.offset.min(t.len()), "");
+        }
+        // узлы строго между
+        let from = a.node + 1;
+        let to = b.node.min(self.nodes.len());
+        if from < to {
+            self.nodes.drain(from..to);
+        }
+        // начало первого узла
+        if let Some(Node::Text(t)) = self.nodes.get_mut(a.node) {
+            t.truncate(a.offset.min(t.len()));
+        } else if !matches!(self.nodes.get(a.node), None) && a.offset == 0 {
+            // каретка стояла перед токеном — сам токен попадает в удаление
+            self.nodes.remove(a.node);
+        }
+        self.caret = a;
+        self.normalize();
+    }
+
+    /// Delete: удаляет символ или токен справа.
+    pub fn delete_forward(&mut self) {
+        let right = self.caret_right(self.caret);
+        if right == self.caret {
+            return;
+        }
+        let here = self.caret;
+        self.delete_range(here, right);
+    }
+
     /// Backspace: удаляет символ слева, а если слева токен — удаляет его
     /// целиком (парный — вместе со вторым концом).
     pub fn backspace(&mut self) {
@@ -581,5 +714,80 @@ mod tests {
         d.caret = Caret { node: 0, offset: 4 }; // после «аб» (2 символа по 2 байта)
         d.insert_token(Kind::Pause, "2");
         assert_eq!(d.serialize(), "аб^2вг");
+    }
+
+    #[test]
+    fn каретка_ходит_по_символам_и_перешагивает_токены() {
+        let d = demo();
+        let mut c = d.start_caret();
+        // первый узел — токен голоса, шаг вправо ставит перед «П»
+        let mut seen = Vec::new();
+        for _ in 0..8 {
+            c = d.caret_right(c);
+            seen.push(c);
+        }
+        // возврат влево той же дорогой
+        for _ in 0..8 {
+            c = d.caret_left(c);
+        }
+        assert_eq!(c, d.start_caret(), "путь влево не вернул в начало");
+    }
+
+    #[test]
+    fn каретка_не_застревает_на_границах() {
+        let d = demo();
+        let mut c = d.start_caret();
+        for _ in 0..500 {
+            c = d.caret_left(c);
+        }
+        assert_eq!(c, d.start_caret());
+        let mut c = d.end_caret();
+        for _ in 0..500 {
+            c = d.caret_right(c);
+        }
+        assert_eq!(c, d.canon(d.end_caret()));
+    }
+
+    #[test]
+    fn каретка_не_встаёт_между_байтами_кириллицы() {
+        let d = Doc::from_nodes(vec![Node::text("Привет")]);
+        let mut c = d.start_caret();
+        let mut offs = vec![c.offset];
+        for _ in 0..6 {
+            c = d.caret_right(c);
+            offs.push(c.offset);
+        }
+        assert_eq!(offs, vec![0, 2, 4, 6, 8, 10, 12], "шаг должен быть по 2 байта");
+    }
+
+    #[test]
+    fn удаление_выделения_внутри_одного_узла() {
+        let mut d = Doc::from_nodes(vec![Node::text("Привет мир")]);
+        let a = Caret { node: 0, offset: 0 };
+        let b = Caret { node: 0, offset: "Привет ".len() };
+        d.delete_range(a, b);
+        assert_eq!(d.serialize(), "мир");
+    }
+
+    #[test]
+    fn удаление_выделения_через_токены_чистит_и_пары() {
+        let mut d = demo();
+        let a = d.canon(Caret { node: 5, offset: 0 });
+        let b = d.end_caret();
+        d.delete_range(a, b);
+        let s = d.serialize();
+        assert!(!s.contains("shake"), "остатки парного токена: {s}");
+        assert!(!s.contains("{/"), "остался висячий конец: {s}");
+    }
+
+    #[test]
+    fn delete_справа_сносит_токен_целиком() {
+        let mut d = Doc::from_nodes(vec![
+            Node::token(Kind::Pause, "2", Role::Open),
+            Node::text("а"),
+        ]);
+        d.caret = d.start_caret();
+        d.delete_forward();
+        assert_eq!(d.serialize(), "а");
     }
 }

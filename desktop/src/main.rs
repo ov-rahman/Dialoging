@@ -2,7 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod icons;
 mod doc;
+mod editor;
 mod theme;
 mod tokens;
 mod ui;

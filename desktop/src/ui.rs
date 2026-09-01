@@ -98,3 +98,56 @@ pub fn ghost(ui: &mut Ui, text: &str, active: bool) -> Response {
     ui.painter().galley(pos, galley, theme::INK);
     resp
 }
+
+/// Кнопка токена в панели: иконка, подпись, мягкая тень, подъём при наведении.
+pub fn token_button(ui: &mut Ui, kind: crate::tokens::Kind) -> Response {
+    use crate::icons;
+    let name = crate::tokens::spec(kind).name;
+    let galley = ui
+        .painter()
+        .layout_no_wrap(name.to_owned(), font::body(), theme::INK);
+
+    let icon = 17.0;
+    let size = Vec2::new(12.0 + icon + 7.0 + galley.size().x + 12.0, 38.0);
+    let (rect, resp) = ui.allocate_at_least(size, Sense::click());
+
+    let lift = if resp.is_pointer_button_down_on() {
+        0.0
+    } else if resp.hovered() {
+        -1.5
+    } else {
+        0.0
+    };
+    let r = rect.translate(egui::vec2(0.0, lift));
+
+    let shadow = if resp.hovered() {
+        theme::shadow_card()
+    } else {
+        theme::shadow_control()
+    };
+    ui.painter().add(shadow.as_shape(r, theme::R_CTRL));
+    ui.painter().rect(
+        r,
+        theme::R_CTRL,
+        theme::WHITE,
+        egui::Stroke::new(1.0, theme::LINE_2),
+        egui::StrokeKind::Inside,
+    );
+
+    let icon_rect = egui::Rect::from_center_size(
+        egui::pos2(r.left() + 12.0 + icon / 2.0, r.center().y),
+        Vec2::splat(icon),
+    );
+    icons::draw_token(ui.painter(), icon_rect, kind, theme::INK, 1.6);
+
+    let tp = egui::pos2(
+        r.left() + 12.0 + icon + 7.0,
+        r.center().y - galley.size().y / 2.0,
+    );
+    ui.painter().galley(tp, galley, theme::INK);
+
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
